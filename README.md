@@ -2,9 +2,6 @@
 
 Ein einfaches, lokales Web-Tool zur transparenten, fairen und rechtlich korrekten Abrechnung von Heiz-, Warmwasser-, Frischwasser-, Abwasser- und Stromkosten zwischen zwei gleich großen Wohnungen, die eine gemeinsame Gasheizung nutzen.
 
-![Screenshot des Rechners](screenshot.png)  
-*(Optional: Hier ein echtes Screenshot einfügen – das Tool läuft komplett im Browser)*
-
 ## Funktionsweise & Berechnungslogik
 
 ### Gas/Heizkosten (nach Heizkostenverordnung)
