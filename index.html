@@ -1,1 +1,267 @@
-Hello World!
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heizkostenverteilung EG/OG</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { text-align: center; }
+        form { max-width: 600px; margin: auto; }
+        label { display: block; margin-top: 10px; }
+        input { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
+        button[type="submit"] { 
+            margin-top: 30px; 
+            padding: 12px; 
+            width: 100%; 
+            background-color: #4CAF50; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            font-size: 16px;
+        }
+        button[type="submit"]:hover { background-color: #45a049; }
+        #results { margin-top: 40px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .section { margin-bottom: 20px; padding: 15px; background-color: #f9f9f9; border-radius: 8px; }
+        .highlight { background-color: #e6f7ff; font-weight: bold; }
+        #storageButtons { text-align: center; margin-top: 20px; }
+        #storageButtons button { 
+            width: auto; 
+            padding: 10px 20px; 
+            margin: 0 10px; 
+            background-color: #008CBA; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+        }
+        #storageButtons button:hover { background-color: #007B9A; }
+    </style>
+</head>
+<body>
+    <h1>Heiz- und Nebenkostenverteilung für EG und OG</h1>
+    <form id="costForm">
+        <div class="section">
+            <h2>Gasheizung und Heizkosten (Heizkostenverordnung beachtet)</h2>
+            <label for="gasCosts">Gesamte Gaskosten (€):</label>
+            <input type="number" id="gasCosts" step="0.01" required>
+
+            <label for="heatEG">Wärmemengenzähler Heizkreis EG (kWh):</label>
+            <input type="number" id="heatEG" required>
+
+            <label for="heatOG">Wärmemengenzähler Heizkreis OG (kWh):</label>
+            <input type="number" id="heatOG" required>
+
+            <label for="heatWW">Wärmemengenzähler Warmwasser gesamt (kWh):</label>
+            <input type="number" id="heatWW" required>
+
+            <label for="wwEG">Warmwasserzähler EG (m³):</label>
+            <input type="number" id="wwEG" step="0.01" required>
+
+            <label for="wwOG">Warmwasserzähler OG (m³):</label>
+            <input type="number" id="wwOG" step="0.01" required>
+        </div>
+
+        <div class="section">
+            <h2>Wasser (Frisch- und Abwasser)</h2>
+            <label for="coldWaterSub">Zwischenzähler Kaltwasser für Heizung (m³):</label>
+            <input type="number" id="coldWaterSub" step="0.01" required>
+
+            <label for="freshWaterPrice">Frischwasserpreis pro m³ (€):</label>
+            <input type="number" id="freshWaterPrice" step="0.01" required>
+
+            <label for="sewagePrice">Abwasserpreis pro m³ (€):</label>
+            <input type="number" id="sewagePrice" step="0.01" required>
+        </div>
+
+        <div class="section">
+            <h2>Strom (Allgemeinstrom und Heizungsstrom)</h2>
+            <label for="totalPower">Allgemeinstrom (Gesamtverbrauch über EG-Zähler) (kWh):</label>
+            <input type="number" id="totalPower" required>
+
+            <label for="heatingPower">Heizungsstrom (aus Heizungs-App abgelesen) (kWh):</label>
+            <input type="number" id="heatingPower" required>
+
+            <label for="powerPrice">Strompreis pro kWh (€):</label>
+            <input type="number" id="powerPrice" step="0.01" required>
+        </div>
+
+        <button type="submit">Berechnen</button>
+    </form>
+
+    <div id="storageButtons">
+        <button id="saveData">Daten speichern</button>
+        <button id="clearData">Daten löschen</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        const form = document.getElementById('costForm');
+        const inputs = form.querySelectorAll('input');
+        const storageKey = 'heizkostenData';
+
+        // Load from localStorage
+        const savedData = JSON.parse(localStorage.getItem(storageKey));
+        if (savedData) {
+            inputs.forEach(input => {
+                if (savedData[input.id]) {
+                    input.value = savedData[input.id];
+                }
+            });
+        }
+
+        // Save / Clear buttons
+        document.getElementById('saveData').addEventListener('click', () => {
+            const data = {};
+            inputs.forEach(input => {
+                data[input.id] = input.value;
+            });
+            localStorage.setItem(storageKey, JSON.stringify(data));
+            alert('Daten gespeichert!');
+        });
+
+        document.getElementById('clearData').addEventListener('click', () => {
+            localStorage.removeItem(storageKey);
+            inputs.forEach(input => input.value = '');
+            document.getElementById('results').innerHTML = '';
+            alert('Daten gelöscht!');
+        });
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Eingaben
+            const gasCosts = parseFloat(document.getElementById('gasCosts').value);
+            const heatEG = parseFloat(document.getElementById('heatEG').value);
+            const heatOG = parseFloat(document.getElementById('heatOG').value);
+            const heatWW = parseFloat(document.getElementById('heatWW').value);
+            const wwEG = parseFloat(document.getElementById('wwEG').value);
+            const wwOG = parseFloat(document.getElementById('wwOG').value);
+            const coldWaterSub = parseFloat(document.getElementById('coldWaterSub').value);
+            const freshWaterPrice = parseFloat(document.getElementById('freshWaterPrice').value);
+            const sewagePrice = parseFloat(document.getElementById('sewagePrice').value);
+            const totalPower = parseFloat(document.getElementById('totalPower').value);
+            const heatingPower = parseFloat(document.getElementById('heatingPower').value);
+            const powerPrice = parseFloat(document.getElementById('powerPrice').value);
+
+            // Gas/Heizung
+            const totalHeatHeating = heatEG + heatOG;
+            const totalHeat = totalHeatHeating + heatWW;
+            const costPerKWh = totalHeat > 0 ? gasCosts / totalHeat : 0;
+
+            const heatingCosts = costPerKWh * totalHeatHeating;
+            const baseHeating = heatingCosts * 0.3;
+            const consHeating = heatingCosts * 0.7;
+            const basePerFlat = baseHeating / 2;
+            const consEGHeating = totalHeatHeating > 0 ? consHeating * (heatEG / totalHeatHeating) : 0;
+            const consOGHeating = totalHeatHeating > 0 ? consHeating * (heatOG / totalHeatHeating) : 0;
+            const roomHeatingEG = basePerFlat + consEGHeating;
+            const roomHeatingOG = basePerFlat + consOGHeating;
+
+            const wwCosts = costPerKWh * heatWW;
+            const baseWW = wwCosts * 0.3;
+            const consWW = wwCosts * 0.7;
+            const baseWWPerFlat = baseWW / 2;
+            const totalWW = wwEG + wwOG;
+            const consWWEG = totalWW > 0 ? consWW * (wwEG / totalWW) : 0;
+            const consWWOG = totalWW > 0 ? consWW * (wwOG / totalWW) : 0;
+            const wwEGTotal = baseWWPerFlat + consWWEG;
+            const wwOGTotal = baseWWPerFlat + consWWOG;
+
+            const totalEGGas = roomHeatingEG + wwEGTotal;
+            const totalOGGas = roomHeatingOG + wwOGTotal;
+
+            // Wasser
+            const wwEGShare = totalWW > 0 ? wwEG / totalWW : 0.5;
+            const wwOGShare = totalWW > 0 ? wwOG / totalWW : 0.5;
+
+            const freshCostsTotal = coldWaterSub * freshWaterPrice;
+
+            const freshWWPart = totalWW * freshWaterPrice;
+            const freshWWEG = freshWWPart * wwEGShare;
+            const freshWWOG = freshWWPart * wwOGShare;
+
+            const diffFresh = Math.max(0, freshCostsTotal - freshWWPart);
+            const diffFreshPerFlat = diffFresh / 2;
+
+            const freshEG = freshWWEG + diffFreshPerFlat;
+            const freshOG = freshWWOG + diffFreshPerFlat;
+
+            const sewageCostsTotal = coldWaterSub * sewagePrice;
+            const sewageEG = freshCostsTotal > 0 ? sewageCostsTotal * (freshEG / freshCostsTotal) : sewageCostsTotal / 2;
+            const sewageOG = freshCostsTotal > 0 ? sewageCostsTotal * (freshOG / freshCostsTotal) : sewageCostsTotal / 2;
+
+            // Strom
+            const generalPower = Math.max(0, totalPower - heatingPower);
+            const generalCosts = generalPower * powerPrice;
+            const generalPerFlat = generalCosts / 2;
+
+            const heatingCostsTotal = heatingPower * powerPrice;
+            const deliveredEG = heatEG + heatWW * wwEGShare;
+            const deliveredOG = heatOG + heatWW * wwOGShare;
+            const totalDelivered = deliveredEG + deliveredOG;
+            const heatingPowerEG = totalDelivered > 0 ? heatingCostsTotal * (deliveredEG / totalDelivered) : heatingCostsTotal / 2;
+            const heatingPowerOG = totalDelivered > 0 ? heatingCostsTotal * (deliveredOG / totalDelivered) : heatingCostsTotal / 2;
+
+            const totalPowerEG = generalPerFlat + heatingPowerEG;
+            const totalPowerOG = generalPerFlat + heatingPowerOG;
+
+            // Erstattung OG → EG
+            const reimbursement = freshOG + sewageOG + totalPowerOG;
+
+            // Ausgabe mit Zwischenwerten
+            let results = `
+                <h2>Ergebnisse</h2>
+
+                <h3>Gas/Heizkosten (Umlage vom Vermieter)</h3>
+                <table>
+                    <tr><th>Beschreibung</th><th>EG (€)</th><th>OG (€)</th><th>Erklärung / Zwischenwerte</th></tr>
+                    <tr><td>Basis Raumheizung (30% Grundkosten, 50/50)</td><td>${basePerFlat.toFixed(2)}</td><td>${basePerFlat.toFixed(2)}</td><td>30% von ${heatingCosts.toFixed(2)} € = ${baseHeating.toFixed(2)} € → 50/50</td></tr>
+                    <tr><td>Verbrauch Raumheizung (70%)</td><td>${consEGHeating.toFixed(2)}</td><td>${consOGHeating.toFixed(2)}</td><td>70% von ${heatingCosts.toFixed(2)} € = ${consHeating.toFixed(2)} € → nach kWh (${heatEG.toFixed(1)} / ${heatOG.toFixed(1)} kWh)</td></tr>
+                    <tr><td>Raumheizung gesamt</td><td>${roomHeatingEG.toFixed(2)}</td><td>${roomHeatingOG.toFixed(2)}</td><td></td></tr>
+                    <tr><td>Basis Warmwasser (30% Grundkosten, 50/50)</td><td>${baseWWPerFlat.toFixed(2)}</td><td>${baseWWPerFlat.toFixed(2)}</td><td>30% von ${wwCosts.toFixed(2)} € = ${baseWW.toFixed(2)} € → 50/50</td></tr>
+                    <tr><td>Verbrauch Warmwasser (70%)</td><td>${consWWEG.toFixed(2)}</td><td>${consWWOG.toFixed(2)}</td><td>70% von ${wwCosts.toFixed(2)} € = ${consWW.toFixed(2)} € → nach m³ (${wwEG.toFixed(2)} / ${wwOG.toFixed(2)} m³)</td></tr>
+                    <tr><td>Warmwasser gesamt</td><td>${wwEGTotal.toFixed(2)}</td><td>${wwOGTotal.toFixed(2)}</td><td></td></tr>
+                    <tr class="highlight"><td><strong>Gesamt Gasumlage</strong></td><td><strong>${totalEGGas.toFixed(2)}</strong></td><td><strong>${totalOGGas.toFixed(2)}</strong></td><td>Gesamtkosten ${gasCosts.toFixed(2)} € / ${totalHeat.toFixed(1)} kWh = ${costPerKWh.toFixed(4)} €/kWh</td></tr>
+                </table>
+
+                <h3>Wasser (Frisch- und Abwasser)</h3>
+                <table>
+                    <tr><th>Beschreibung</th><th>Gesamt (€)</th><th>EG (€)</th><th>OG (€)</th><th>Erklärung / Zwischenwerte</th></tr>
+                    <tr><td>Frischwasser WW (verbrauchsabhängig)</td><td>${freshWWPart.toFixed(2)}</td><td>${freshWWEG.toFixed(2)}</td><td>${freshWWOG.toFixed(2)}</td><td>${totalWW.toFixed(2)} m³ × ${freshWaterPrice.toFixed(2)} €/m³ → nach m³-Verbrauch</td></tr>
+                    <tr><td>Frischwasser Differenz (z. B. Nachfüllung)</td><td>${diffFresh.toFixed(2)}</td><td>${diffFreshPerFlat.toFixed(2)}</td><td>${diffFreshPerFlat.toFixed(2)}</td><td>(${coldWaterSub.toFixed(2)} - ${totalWW.toFixed(2)}) m³ × ${freshWaterPrice.toFixed(2)} €/m³ → 50/50</td></tr>
+                    <tr><td><strong>Frischwasser gesamt</strong></td><td><strong>${freshCostsTotal.toFixed(2)}</strong></td><td><strong>${freshEG.toFixed(2)}</strong></td><td><strong>${freshOG.toFixed(2)}</strong></td><td>${coldWaterSub.toFixed(2)} m³ × ${freshWaterPrice.toFixed(2)} €/m³</td></tr>
+                    <tr><td>Abwasser</td><td>${sewageCostsTotal.toFixed(2)}</td><td>${sewageEG.toFixed(2)}</td><td>${sewageOG.toFixed(2)}</td><td>${coldWaterSub.toFixed(2)} m³ × ${sewagePrice.toFixed(2)} €/m³ → proportional zum Frischwasseranteil</td></tr>
+                </table>
+
+                <h3>Strom (Allgemeinstrom + Heizungsstrom)</h3>
+                <table>
+                    <tr><th>Beschreibung</th><th>Gesamt (€)</th><th>EG (€)</th><th>OG (€)</th><th>Erklärung / Zwischenwerte</th></tr>
+                    <tr><td>Allgemeinstrom (Zählerstand gesamt)</td><td>${(totalPower * powerPrice).toFixed(2)}</td><td>${totalPowerEG.toFixed(2)}</td><td>${totalPowerOG.toFixed(2)}</td><td>${totalPower.toFixed(1)} kWh × ${powerPrice.toFixed(2)} €/kWh</td></tr>
+                    <tr><td>&nbsp;&nbsp;└ davon Allgemeinstrom (ohne Heizung)</td><td>${generalCosts.toFixed(2)}</td><td>${generalPerFlat.toFixed(2)}</td><td>${generalPerFlat.toFixed(2)}</td><td>${generalPower.toFixed(1)} kWh × ${powerPrice.toFixed(2)} €/kWh → 50/50</td></tr>
+                    <tr><td>&nbsp;&nbsp;└ davon Heizungsstrom</td><td>${heatingCostsTotal.toFixed(2)}</td><td>${heatingPowerEG.toFixed(2)}</td><td>${heatingPowerOG.toFixed(2)}</td><td>${heatingPower.toFixed(1)} kWh × ${powerPrice.toFixed(2)} €/kWh → nach gelieferter Wärme (${deliveredEG.toFixed(1)} / ${deliveredOG.toFixed(1)} kWh)</td></tr>
+                    <tr class="highlight"><td><strong>Gesamt Strom</strong></td><td>${(totalPower * powerPrice).toFixed(2)}</td><td><strong>${totalPowerEG.toFixed(2)}</strong></td><td><strong>${totalPowerOG.toFixed(2)}</strong></td><td></td></tr>
+                </table>
+
+                <h3>Zusammenfassung: Wer zahlt was?</h3>
+                <table>
+                    <tr class="highlight"><th></th><th>EG zahlt</th><th>OG zahlt</th></tr>
+                    <tr><td><strong>Gasumlage an Vermieter</strong></td><td>${totalEGGas.toFixed(2)} €</td><td>${totalOGGas.toFixed(2)} €</td></tr>
+                    <tr><td><strong>Wasser + Strom (zunächst vom EG gezahlt)</strong></td><td>${(freshEG + sewageEG + totalPowerEG).toFixed(2)} € (bleibt beim EG)</td><td>${reimbursement.toFixed(2)} € <em>(erstattet an EG)</em></td></tr>
+                    <tr class="highlight"><td><strong>Netto-Zahlung OG → EG</strong></td><td colspan="2" style="text-align:center;">${reimbursement.toFixed(2)} €</td></tr>
+                </table>
+
+                <p><strong>Erklärung:</strong><br>
+                - Vermieter legt Gas um: EG ${totalEGGas.toFixed(2)} €, OG ${totalOGGas.toFixed(2)} €.<br>
+                - EG zahlt zunächst Wasser und gesamten Strom.<br>
+                - OG erstattet EG: Frischwasser (${freshOG.toFixed(2)} €) + Abwasser (${sewageOG.toFixed(2)} €) + Stromanteil (${totalPowerOG.toFixed(2)} €) = <strong>${reimbursement.toFixed(2)} €</strong>.</p>
+            `;
+
+            document.getElementById('results').innerHTML = results;
+        });
+    </script>
+</body>
+</html>
