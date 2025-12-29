@@ -21,7 +21,16 @@
             font-size: 16px;
         }
         button[type="submit"]:hover { background-color: #45a049; }
-        #results { margin-top: 40px; }
+        
+        .results-section { 
+            margin-top: 40px; 
+            padding: 20px; 
+            background-color: #f0f8ff; 
+            border: 1px solid #d0e8ff; 
+            border-radius: 8px; 
+            scroll-margin-top: 80px;   /* ← Platz für fixe Header falls vorhanden */
+        }
+        
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
@@ -96,7 +105,7 @@
         <button id="clearData">Daten löschen</button>
     </div>
 
-    <div id="results"></div>
+    <div id="results" class="results-section" style="display: none;"></div>
 
     <script>
         const form = document.getElementById('costForm');
@@ -127,6 +136,7 @@
             localStorage.removeItem(storageKey);
             inputs.forEach(input => input.value = '');
             document.getElementById('results').innerHTML = '';
+            document.getElementById('results').style.display = 'none';
             alert('Daten gelöscht!');
         });
 
@@ -225,43 +235,13 @@
                     <tr><td>Basis Warmwasser (30% Grundkosten, 50/50)</td><td>${baseWWPerFlat.toFixed(2)}</td><td>${baseWWPerFlat.toFixed(2)}</td><td>30% von ${wwCosts.toFixed(2)} € = ${baseWW.toFixed(2)} € → 50/50</td></tr>
                     <tr><td>Verbrauch Warmwasser (70%)</td><td>${consWWEG.toFixed(2)}</td><td>${consWWOG.toFixed(2)}</td><td>70% von ${wwCosts.toFixed(2)} € = ${consWW.toFixed(2)} € → nach m³ (${wwEG.toFixed(2)} / ${wwOG.toFixed(2)} m³)</td></tr>
                     <tr><td>Warmwasser gesamt</td><td>${wwEGTotal.toFixed(2)}</td><td>${wwOGTotal.toFixed(2)}</td><td></td></tr>
-                    <tr class="highlight"><td><strong>Gesamt Gasumlage</strong></td><td><strong>${totalEGGas.toFixed(2)}</strong></td><td><strong>${totalOGGas.toFixed(2)}</strong></td><td>Gesamtkosten ${gasCosts.toFixed(2)} € / ${totalHeat.toFixed(1)} kWh = ${costPerKWh.toFixed(4)} €/kWh</td></tr>
+                    <tr class="highlight"><td><strong>Gesamt Gasumlage</strong></td><td><strong>${totalEGGas.toFixed(2)}</strong></td><td><strong>${totalOGGas.toFixed(2)}</strong></td><td></td></tr>
                 </table>
 
-                <h3>Wasser (Frisch- und Abwasser)</h3>
+                <h3>Wasser (Frisch- + Abwasser)</h3>
                 <table>
-                    <tr><th>Beschreibung</th><th>Gesamt (€)</th><th>EG (€)</th><th>OG (€)</th><th>Erklärung / Zwischenwerte</th></tr>
-                    <tr><td>Frischwasser WW (verbrauchsabhängig)</td><td>${freshWWPart.toFixed(2)}</td><td>${freshWWEG.toFixed(2)}</td><td>${freshWWOG.toFixed(2)}</td><td>${totalWW.toFixed(2)} m³ × ${freshWaterPrice.toFixed(2)} €/m³ → nach m³-Verbrauch</td></tr>
-                    <tr><td>Frischwasser Differenz (z. B. Nachfüllung)</td><td>${diffFresh.toFixed(2)}</td><td>${diffFreshPerFlat.toFixed(2)}</td><td>${diffFreshPerFlat.toFixed(2)}</td><td>(${coldWaterSub.toFixed(2)} - ${totalWW.toFixed(2)}) m³ × ${freshWaterPrice.toFixed(2)} €/m³ → 50/50</td></tr>
-                    <tr><td><strong>Frischwasser gesamt</strong></td><td><strong>${freshCostsTotal.toFixed(2)}</strong></td><td><strong>${freshEG.toFixed(2)}</strong></td><td><strong>${freshOG.toFixed(2)}</strong></td><td>${coldWaterSub.toFixed(2)} m³ × ${freshWaterPrice.toFixed(2)} €/m³</td></tr>
-                    <tr><td>Abwasser</td><td>${sewageCostsTotal.toFixed(2)}</td><td>${sewageEG.toFixed(2)}</td><td>${sewageOG.toFixed(2)}</td><td>${coldWaterSub.toFixed(2)} m³ × ${sewagePrice.toFixed(2)} €/m³ → proportional zum Frischwasseranteil</td></tr>
-                </table>
-
-                <h3>Strom (Allgemeinstrom + Heizungsstrom)</h3>
-                <table>
-                    <tr><th>Beschreibung</th><th>Gesamt (€)</th><th>EG (€)</th><th>OG (€)</th><th>Erklärung / Zwischenwerte</th></tr>
-                    <tr><td>Allgemeinstrom (Zählerstand gesamt)</td><td>${(totalPower * powerPrice).toFixed(2)}</td><td>${totalPowerEG.toFixed(2)}</td><td>${totalPowerOG.toFixed(2)}</td><td>${totalPower.toFixed(1)} kWh × ${powerPrice.toFixed(2)} €/kWh</td></tr>
-                    <tr><td>&nbsp;&nbsp;└ davon Allgemeinstrom (ohne Heizung)</td><td>${generalCosts.toFixed(2)}</td><td>${generalPerFlat.toFixed(2)}</td><td>${generalPerFlat.toFixed(2)}</td><td>${generalPower.toFixed(1)} kWh × ${powerPrice.toFixed(2)} €/kWh → 50/50</td></tr>
-                    <tr><td>&nbsp;&nbsp;└ davon Heizungsstrom</td><td>${heatingCostsTotal.toFixed(2)}</td><td>${heatingPowerEG.toFixed(2)}</td><td>${heatingPowerOG.toFixed(2)}</td><td>${heatingPower.toFixed(1)} kWh × ${powerPrice.toFixed(2)} €/kWh → nach gelieferter Wärme (${deliveredEG.toFixed(1)} / ${deliveredOG.toFixed(1)} kWh)</td></tr>
-                    <tr class="highlight"><td><strong>Gesamt Strom</strong></td><td>${(totalPower * powerPrice).toFixed(2)}</td><td><strong>${totalPowerEG.toFixed(2)}</strong></td><td><strong>${totalPowerOG.toFixed(2)}</strong></td><td></td></tr>
-                </table>
-
-                <h3>Zusammenfassung: Wer zahlt was?</h3>
-                <table>
-                    <tr class="highlight"><th></th><th>EG zahlt</th><th>OG zahlt</th></tr>
-                    <tr><td><strong>Gasumlage an Vermieter</strong></td><td>${totalEGGas.toFixed(2)} €</td><td>${totalOGGas.toFixed(2)} €</td></tr>
-                    <tr><td><strong>Wasser + Strom (zunächst vom EG gezahlt)</strong></td><td>${(freshEG + sewageEG + totalPowerEG).toFixed(2)} € (bleibt beim EG)</td><td>${reimbursement.toFixed(2)} € <em>(erstattet an EG)</em></td></tr>
-                    <tr class="highlight"><td><strong>Netto-Zahlung OG → EG</strong></td><td colspan="2" style="text-align:center;">${reimbursement.toFixed(2)} €</td></tr>
-                </table>
-
-                <p><strong>Erklärung:</strong><br>
-                - Vermieter legt Gas um: EG ${totalEGGas.toFixed(2)} €, OG ${totalOGGas.toFixed(2)} €.<br>
-                - EG zahlt zunächst Wasser und gesamten Strom.<br>
-                - OG erstattet EG: Frischwasser (${freshOG.toFixed(2)} €) + Abwasser (${sewageOG.toFixed(2)} €) + Stromanteil (${totalPowerOG.toFixed(2)} €) = <strong>${reimbursement.toFixed(2)} €</strong>.</p>
-            `;
-
-            document.getElementById('results').innerHTML = results;
-        });
-    </script>
-</body>
-</html>
+                    <tr><th>Beschreibung</th><th>EG (€)</th><th>OG (€)</th><th>Erklärung</th></tr>
+                    <tr><td>Frischwasser Warmwasseranteil</td><td>${freshWWEG.toFixed(2)}</td><td>${freshWWOG.toFixed(2)}</td><td>nach m³-Verbrauch WW</td></tr>
+                    <tr><td>Frischwasser Rest (kalt + Überschuss)</td><td>${diffFreshPerFlat.toFixed(2)}</td><td>${diffFreshPerFlat.toFixed(2)}</td><td>50/50</td></tr>
+                    <tr class="highlight"><td><strong>Frischwasser gesamt</strong></td><td><strong>${freshEG.toFixed(2)}</strong></td><td><strong>${freshOG.toFixed(2)}</strong></td><td></td></tr>
+                    <tr><td>Abwasser</td><td>${sewageEG.toFixed(2)}</td><td>${sewageOG.toFixed(2)}</td>
