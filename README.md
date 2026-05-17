@@ -1,48 +1,173 @@
-# Heizkosten-Rechner für zwei Wohnungen (EG/OG) mit zentraler Gasheizung
+# Heizkosten- und Nebenkostenrechner EG/OG
 
-Ein einfaches, lokales Web-Tool zur transparenten, fairen und rechtlich korrekten Abrechnung von Heiz-, Warmwasser-, Frischwasser-, Abwasser- und Stromkosten zwischen zwei gleich großen Wohnungen, die eine gemeinsame Gasheizung nutzen.
+Eine eigenstaendige HTML/CSS/JavaScript-Seite zur fairen Aufteilung von Gas-, CO2-, Wasser-, Abwasser- und Stromkosten zwischen zwei Wohnungen: EG und OG.
 
-## Funktionsweise & Berechnungslogik
+Der Rechner ist fuer ein Zweifamilienhaus-Szenario gedacht, in dem beide Wohnungen eine zentrale Gasheizung teilen. Der Vermieter zahlt zunaechst die Gasrechnung, das EG zahlt zunaechst Wasser/Abwasser und Allgemeinstrom. Am Ende werden die Kosten und Erstattungen tabellarisch nachvollziehbar aufgeschluesselt.
 
-### Gas/Heizkosten (nach Heizkostenverordnung)
-- Gesamte Gaskosten werden auf die abgegebene Wärme (Raumheizung + Warmwasser) umgelegt → €/kWh
-- **Raumheizung**: 30 % Grundkosten (50/50 nach Wohnfläche) + 70 % verbrauchsabhängig (nach Wärmemengenzähler kWh EG/OG)
-- **Warmwasser**: 30 % Grundkosten (50/50) + 70 % verbrauchsabhängig (nach Warmwassermengenzähler m³ EG/OG)
-- Der Vermieter legt diese Kosten auf die Mieter um.
+## Datei
 
-### Frischwasser (Kaltwasser für Warmwasserbereitung + evtl. Nachfüllung)
-- Gesamtmenge aus Zwischenzähler (m³)
-- Der Teil, der dem gemessenen Warmwasserverbrauch (Summe m³ EG + OG) entspricht → **verbrauchsabhängig** nach m³ aufteilen
-- Differenz (z. B. Nachfüllung des Heizkreises) → **50/50** geteilt
-- EG zahlt zunächst alles → OG erstattet seinen Anteil
+- `heizkosten-rechner.html`: komplette Anwendung als einzelne statische HTML-Datei
 
-### Abwasser
-- Basierend auf der **gesamten bezogenen Frischwassermenge** (Zwischenzähler)
-- Aufteilung **proportional zum Frischwasseranteil** jeder Wohnung (berücksichtigt bereits verbrauchsabhängigen Teil + 50/50-Differenz)
-- EG zahlt zunächst → OG erstattet seinen Anteil
+Die Seite benoetigt keinen Build-Prozess und keine externen Frameworks.
 
-### Strom (Allgemeinstrom inkl. Heizung)
-- Eingabe: **Gesamter Zählerstand** (inkl. Heizung) + separater Heizungsstrom (aus Heizungs-App)
-- Heizungsstrom wird abgezogen → Kosten verbrauchsabhängig verteilt (proportional zur gelieferten Wärme: Heizkreis + anteiliger Warmwasseranteil)
-- Restlicher Allgemeinstrom (ohne Heizung) → **50/50** geteilt
-- EG zahlt zunächst alles → OG erstattet seinen Anteil
+## Nutzung
 
-### Zusammenfassung
-- Klare Tabelle: Was jeder an den Vermieter zahlt (Gasumlage) und wie viel das OG dem EG erstatten muss (Wasser + Strom)
+Die Datei `heizkosten-rechner.html` direkt im Browser oeffnen oder ueber einen kleinen lokalen Webserver starten:
 
-## Besonderheiten
-- Alle Berechnungen mit detaillierten Zwischenwerten in den Tabellen für maximale Nachvollziehbarkeit
-- Daten können im Browser (LocalStorage) gespeichert und gelöscht werden
-- Keine externen Abhängigkeiten – läuft komplett offline
-- Schönes, responsives Layout mit harmonischen Buttons und Sections
+```bash
+python -m http.server 8123 --bind 127.0.0.1
+```
 
-## Verwendung
-1. `index.html` herunterladen oder kopieren
-2. Im Browser öffnen (einfach per Doppelklick)
-3. Alle Zählerstände und Preise eingeben
-4. „Berechnen“ klicken
-5. Ergebnisse ablesen und bei Bedarf speichern
+Danach im Browser oeffnen:
 
-## Vollständiger Prompt (zur Reproduktion)
-Falls du das Tool später neu generieren möchtest, hier der komplette Prompt, der diesen exakten Rechner erzeugt:
-> Zwei Wohnungen (EG und OG) teilen sich neuerdings eine zentrale Gasheizung. Erstelle mir eine HTML Javascript Website mit wenig Abhängigkeiten, damit die angefallenen Kosten fair und rechtlich korrekt verteilt werden. Die Berechnung sollte in übersichtlichen Tabellen dargestellt werden. Beachte dabei auch die Heizkostenverordnung bzw. die 30/70 Regel. Dies gilt für Heizung und auch für Warmwasser. Die Wohnungen sind beide etwa 78 qm groß und sonst identisch aufgebaut. Die Heizung befindet sich selbst im OG. Es existieren folgende Zähler: Warmwasser (m³) für EG, Warmwasser (m³) für OG, Wärmemengenzähler Heizkreis EG (kWh), Wärmemengenzähler Heizkreis OG (kWh), Wärmemengenzähler Warmwasser (kWh) gesamt. Gegeben seien die angefallenen Gaskosten, die verteilt werden müssen. Außerdem gibt folgende Sonderfälle: 1. Das Kaltwasser für die Heizung (was später Warmwasser für beide Wohnungen wird) geht vom Wasserzähler des EG ab. Hierfür gibt es noch einen separaten Zwischenzähler. Die Kosten müssen hier also ebenfalls aufgeteilt werden, bzw. muss das OG dem EG erstatten. Beachte, dass auch das Abwasser fair geteilt werden muss, da auch dies das EG erst einmal zahlt. Dieses hat einen unterschiedlichen Preis zum Frischwasser. Das Abwasser entspricht der gesamten bezogenen Frischwassermenge (Zwischenzähler). Für das Frischwasser: Der Teil, der dem Warmwasserverbrauch (Summe m³ EG + OG) entspricht, wird verbrauchsabhängig nach m³ aufgeteilt. Die Differenz (z.B. Nachfüllung Heizkreis) wird 50/50 geteilt. 2. Ähnliches Szenario für den Allgemeinstrom, auch hier ist die Heizung angeschlossen und es läuft technisch über den Zähler des EG. Der Allgemeinstromzähler beinhaltet auch den Heizungsstrom. In den Rechner soll man also wirklich den gesamten Zählerstand eingeben. Dennoch gibt es das weitere Feld für den Heizungsstrom, was man von der App abliest. Es soll auf der Oberfläche bzw. im Ergebnis erkennbar sein, dass bei der Berechnung des Allgemeinstroms der Heizungsstrom abgezogen wurde. Anschließend der Allgemeinstromrest halbieren (50/50), der Heizungsstrom verbrauchsabhängig machen (proportional zur gelieferten Wärme: Heizkreis + anteiliger Warmwasseranteil). Der Vermieter zahlt das Gas, auf ihm ist der Zähler angemeldet. Wasser und Strom übernimmt zunächst das EG. Bitte am Ende in einer Tabelle zusammenfassen, wer jetzt wie viel bezahlen muss und wie die Erstattung aussieht. Die eingegebenen Werte sollen auf Wunsch in den LocalStorage gespeichert werden (Button). Es soll auch einen Button geben, um alle Werte aus dem LocalStorage wieder zu entfernen. Aus den Tabellen soll auch die Verteilung 30:70 hervorgehen, damit man die Berechnung nachvollziehen kann. In den Ergebnistabellen neben den Eurowerten auch die (Zwischen)werte angeben, sonst lässt sich das nicht so leicht nachvollziehen. Der "Berechnen"-Button soll optisch bündig zu den Eingabefeldern sein (gleiche Breite, gutes Padding, harmonisches Layout). Die Sections sollen einen leichten Hintergrund und abgerundete Ecken haben. In der Stromtabelle soll die Zeile "Allgemeinstrom (Zählerstand gesamt)" heißen und den gesamten Verbrauch zeigen, darunter eingerückt "davon Heizungsstrom (abgezogen)" und "davon Rest-Allgemeinstrom". Abwasser soll einfach "Abwasser" heißen.
+```text
+http://127.0.0.1:8123/heizkosten-rechner.html
+```
+
+## Funktionen
+
+- Verteilung der bereinigten Gaskosten nach Heizkostenverordnung mit 30/70-Regel
+- Separate Behandlung der in der Gasrechnung ausgewiesenen CO2-Kosten
+- CO2-Kostenaufteilung nach CO2-Kostenaufteilungsgesetz
+- Verrechnung von Gas-Vorauszahlungen fuer EG und OG
+- Wasser-/Abwasser-Sonderfall, wenn das Kaltwasser fuer Warmwasser/Heizung ueber den EG-Zaehler laeuft
+- Strom-Sonderfall, wenn Allgemeinstrom und Heizungsstrom ueber den EG-Zaehler laufen
+- Ergebnisdarstellung in nachvollziehbaren Tabellen mit Zwischenwerten
+- Speichern und Loeschen der Eingabewerte im LocalStorage
+
+## Berechnungslogik Kurzfassung
+
+Die eingegebenen Gaskosten enthalten die CO2-Kosten. Der Rechner zieht die explizit ausgewiesenen CO2-Kosten zuerst ab. Nur die bereinigten Gaskosten werden anschliessend auf Heizung und Warmwasser verteilt.
+
+Die bereinigten Gaskosten werden anhand der gemessenen Waermemengen in Kostenblock Heizung und Kostenblock Warmwasser aufgeteilt. Innerhalb jedes Blocks gilt:
+
+- 30 Prozent Grundkosten nach Wohnflaeche
+- 70 Prozent Verbrauchskosten
+
+Bei Heizung laufen die Verbrauchskosten ueber die Heizkreis-Waermemengenzaehler. Bei Warmwasser laufen sie ueber die Warmwasserzaehler in m3.
+
+Die CO2-Kosten werden separat nach CO2KostAufG auf Vermieter und Mieterseite verteilt. Der Mieterseitenanteil wird verbrauchsabhaengig auf EG und OG verteilt.
+
+## Rechtlicher Hinweis
+
+Der Rechner bildet die beschriebene Abrechnungslogik praxisnah ab, ersetzt aber keine Rechts- oder Steuerberatung. Vertragsdetails, Eichfristen, Betriebskostenvereinbarungen, lokale Gebuehrenbescheide und Sonderregelungen sollten gesondert geprueft werden.
+
+## Wiederherstellungs-Prompt
+
+Mit folgendem Prompt kann die Anwendung spaeter erneut erstellt oder rekonstruiert werden:
+
+```text
+Erstelle eine eigenständige HTML/CSS/JavaScript-Website ohne Frameworks und mit möglichst wenigen Abhängigkeiten: einen Heizkosten- und Nebenkostenrechner für zwei Wohnungen EG und OG.
+
+Kontext:
+Zwei Wohnungen, EG und OG, teilen sich eine zentrale Gasheizung. Beide Wohnungen sind etwa 78 m² groß und sonst identisch. Die Heizung befindet sich im OG. Der Vermieter zahlt zunächst die Gasrechnung, EG zahlt zunächst Wasser/Abwasser und Allgemeinstrom. EG und OG leisten außerdem jährliche Gas-Vorauszahlungen an den Vermieter, die am Ende verrechnet werden.
+
+Die Seite soll direkt als einzelne HTML-Datei im Browser funktionieren. Eingaben sollen optional per Button im LocalStorage gespeichert werden können. Es soll auch einen Button geben, der alle gespeicherten Werte aus dem LocalStorage löscht. Der Berechnen-Button soll optisch bündig zu den Eingabefeldern/Aktionsbuttons sein, gleiche Breite, gutes Padding, harmonisches Layout. Sections sollen leichte Hintergründe und abgerundete Ecken haben. Ergebnisdarstellung in übersichtlichen Tabellen mit Eurobeträgen und nachvollziehbaren Zwischenwerten.
+
+Eingabefelder:
+- Wohnfläche EG (m²), Standard 78
+- Wohnfläche OG (m²), Standard 78
+- Gaskosten gesamt (€), inklusive explizit ausgewiesener CO₂-Kosten
+- Abrechnungszeitraum
+- Abrechnungsdauer in Monaten, Standard 12
+- CO₂-Kosten laut Gasrechnung (€)
+- CO₂-Ausstoß laut Gasrechnung (kg)
+- Gas-Vorauszahlung EG im Jahr (€)
+- Gas-Vorauszahlung OG im Jahr (€)
+- Wärmemengenzähler Heizkreis EG (kWh)
+- Wärmemengenzähler Heizkreis OG (kWh)
+- Wärmemengenzähler Warmwasser gesamt (kWh)
+- Warmwasser EG (m³)
+- Warmwasser OG (m³)
+- Zwischenzähler Kaltwasser für Heizung/Warmwasser (m³)
+- Frischwasserpreis (€/m³)
+- Abwasserpreis (€/m³)
+- Allgemeinstrom (Zählerstand gesamt, kWh)
+- Heizungsstrom laut App (kWh)
+- Strompreis (€/kWh)
+
+Berechnung Gas:
+Die eingegebenen Gaskosten enthalten bereits die CO₂-Kosten. Ziehe zuerst die explizit ausgewiesenen CO₂-Kosten ab. Nur die bereinigten Gaskosten werden anschließend auf Heizung und Warmwasser verteilt.
+
+Aufteilung bereinigte Gaskosten:
+- Kostenblock Heizung = bereinigte Gaskosten × Anteil Heizkreis-kWh an gesamter gelieferter Wärme
+- Kostenblock Warmwasser = bereinigte Gaskosten × Anteil Warmwasser-kWh an gesamter gelieferter Wärme
+- Gesamte gelieferte Wärme = Heizkreis EG + Heizkreis OG + Wärmemengenzähler Warmwasser gesamt
+
+Für Heizung:
+- 30 % Grundkosten nach Wohnfläche
+- 70 % Verbrauchskosten nach Wärmemengenzähler Heizkreis EG/OG
+
+Für Warmwasser:
+- 30 % Grundkosten nach Wohnfläche
+- 70 % Verbrauchskosten nach Warmwasserverbrauch in m³ EG/OG
+- Der Warmwasser-Wärmemengenzähler bestimmt nur den Warmwasser-Kostenblock.
+
+CO₂-Kosten:
+Die CO₂-Kosten werden separat nach CO₂-Kostenaufteilungsgesetz verteilt. Dafür den spezifischen CO₂-Ausstoß berechnen:
+CO₂ kg / Gesamtwohnfläche × 12 / Abrechnungsdauer in Monaten = kg CO₂/m²/a.
+
+Nutze die gesetzliche Staffel:
+- < 12 kg CO₂/m²/a: Mieter 100 %, Vermieter 0 %
+- 12 bis < 17: Mieter 90 %, Vermieter 10 %
+- 17 bis < 22: Mieter 80 %, Vermieter 20 %
+- 22 bis < 27: Mieter 70 %, Vermieter 30 %
+- 27 bis < 32: Mieter 60 %, Vermieter 40 %
+- 32 bis < 37: Mieter 50 %, Vermieter 50 %
+- 37 bis < 42: Mieter 40 %, Vermieter 60 %
+- 42 bis < 47: Mieter 30 %, Vermieter 70 %
+- 47 bis < 52: Mieter 20 %, Vermieter 80 %
+- ≥ 52: Mieter 5 %, Vermieter 95 %
+
+Den Vermieteranteil separat ausweisen. Den Mieteranteil verbrauchsabhängig auf EG und OG verteilen, proportional zur gelieferten Wärme je Wohnung:
+- EG: Heizkreis EG + anteilige Warmwasserwärme nach Warmwasser-m³ EG
+- OG: Heizkreis OG + anteilige Warmwasserwärme nach Warmwasser-m³ OG
+
+Gas-Vorauszahlungen:
+EG und OG haben im Jahr Gas an den Vermieter vorausgezahlt. Am Ende je Wohnung verrechnen:
+Gas-Saldo = bereinigter Gasanteil + CO₂-Mieteranteil - Gas-Vorauszahlung.
+Positive Werte sind Nachzahlung an Vermieter. Negative Werte sind Guthaben vom Vermieter. Beides in der Zusammenfassung getrennt ausweisen.
+
+Wasser/Abwasser-Sonderfall:
+Das Kaltwasser für die Heizung bzw. Warmwasserbereitung läuft über den Wasserzähler des EG. Es gibt einen separaten Zwischenzähler.
+- Abwasser heißt in der Oberfläche einfach „Abwasser“.
+- Abwasser entspricht der gesamten bezogenen Frischwassermenge laut Zwischenzähler.
+- Der Teil der Frischwassermenge, der dem Warmwasserverbrauch entspricht, also Warmwasser EG + Warmwasser OG, wird verbrauchsabhängig nach m³ aufgeteilt.
+- Die Differenz, z. B. Nachfüllung Heizkreis, wird 50/50 geteilt.
+- Für Abwasser gilt dieselbe Mengenlogik, aber mit separatem Abwasserpreis.
+- Ergebnis: Wasser/Abwasser wird zunächst vom EG bezahlt; OG muss seinen Anteil an EG erstatten.
+
+Strom-Sonderfall:
+Der Allgemeinstromzähler läuft über EG und beinhaltet auch den Heizungsstrom. In der Eingabe soll der gesamte Zählerstand eingetragen werden. Zusätzlich gibt es das Feld Heizungsstrom laut App.
+Berechnung:
+- Allgemeinstrom gesamt = gesamter Zählerstand × Strompreis
+- Heizungsstrom = Heizungsstrom laut App × Strompreis
+- Rest-Allgemeinstrom = Gesamtstrom - Heizungsstrom
+- Rest-Allgemeinstrom wird 50/50 geteilt
+- Heizungsstrom wird verbrauchsabhängig proportional zur gelieferten Wärme verteilt: Heizkreis + anteiliger Warmwasseranteil
+In der Stromtabelle muss die Zeile exakt heißen:
+„Allgemeinstrom (Zählerstand gesamt)“
+Darunter eingerückt:
+„davon Heizungsstrom (abgezogen)“
+„davon Rest-Allgemeinstrom“
+
+Ergebnistabellen:
+Erstelle Tabellen für:
+1. Gas ohne CO₂-Kosten: Aufteilung nach Wärmemenge und 30/70-Regel
+2. CO₂-Kosten: Aufteilung nach CO₂-Kostenaufteilungsgesetz
+3. Wasser: Kaltwasser für Warmwasser/Heizung über EG
+4. Strom: Allgemeinstrom über EG, Heizungsstrom abgezogen
+5. Zusammenfassung und Zahlungsflüsse
+
+In den Tabellen neben Eurobeträgen immer auch Zwischenwerte zeigen, z. B. kWh, m³, Prozentanteile, 30/70-Beträge, CO₂-Stufe, Vermieteranteil, Mieteranteil, Vorauszahlungen, Nachzahlung/Guthaben.
+
+Zusammenfassung:
+Am Ende klar ausweisen:
+- Kostenanteil EG gesamt
+- Kostenanteil OG gesamt
+- Vermieter trägt selbst: CO₂-Anteil Vermieter
+- EG/OG Gas-Saldo gegenüber Vermieter nach Vorauszahlungen
+- offene Nachzahlung an Vermieter
+- Guthaben vom Vermieter
+- OG erstattet an EG für Wasser/Abwasser und Strom
+```
