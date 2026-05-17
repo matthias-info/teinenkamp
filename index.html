@@ -1,267 +1,865 @@
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Heizkostenverteilung EG/OG</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        h1 { text-align: center; }
-        form { max-width: 600px; margin: auto; }
-        label { display: block; margin-top: 10px; }
-        input { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
-        button[type="submit"] { 
-            margin-top: 30px; 
-            padding: 12px; 
-            width: 100%; 
-            background-color: #4CAF50; 
-            color: white; 
-            border: none; 
-            cursor: pointer; 
-            font-size: 16px;
-        }
-        button[type="submit"]:hover { background-color: #45a049; }
-        #results { margin-top: 40px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .section { margin-bottom: 20px; padding: 15px; background-color: #f9f9f9; border-radius: 8px; }
-        .highlight { background-color: #e6f7ff; font-weight: bold; }
-        #storageButtons { text-align: center; margin-top: 20px; }
-        #storageButtons button { 
-            width: auto; 
-            padding: 10px 20px; 
-            margin: 0 10px; 
-            background-color: #008CBA; 
-            color: white; 
-            border: none; 
-            cursor: pointer; 
-        }
-        #storageButtons button:hover { background-color: #007B9A; }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Heizkosten- und Nebenkostenrechner EG/OG</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f6f3;
+      --panel: #ffffff;
+      --section: #eef3ed;
+      --section-2: #f6f1e8;
+      --ink: #1f2a27;
+      --muted: #5c6862;
+      --line: #c9d3cc;
+      --accent: #28685a;
+      --accent-dark: #1f5147;
+      --warn: #8b5b13;
+      --danger: #9e2f2f;
+      --soft: #dde9e0;
+      --shadow: 0 16px 40px rgba(31, 42, 39, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.45;
+    }
+
+    main {
+      width: min(1220px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 48px;
+    }
+
+    header {
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 4vw, 42px);
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 21px;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0;
+    }
+
+    .lede {
+      color: var(--muted);
+      max-width: 920px;
+    }
+
+    .notice {
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: #fff8e8;
+      border: 1px solid #edd9ac;
+      color: #5c4216;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 16px;
+    }
+
+    section {
+      background: var(--section);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .section-alt {
+      background: var(--section-2);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .field {
+      min-width: 0;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 700;
+      font-size: 13px;
+      color: #2e3835;
+    }
+
+    input {
+      width: 100%;
+      min-height: 42px;
+      padding: 9px 10px;
+      border: 1px solid #aebbb3;
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+    }
+
+    input:focus {
+      outline: 3px solid rgba(40, 104, 90, 0.18);
+      border-color: var(--accent);
+    }
+
+    .hint {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+      align-items: stretch;
+    }
+
+    button {
+      width: 100%;
+      min-height: 46px;
+      padding: 11px 14px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .primary:hover {
+      background: var(--accent-dark);
+    }
+
+    .secondary {
+      background: #fff;
+      color: var(--accent-dark);
+      border-color: #aebbb3;
+    }
+
+    .danger {
+      background: #fff;
+      color: var(--danger);
+      border-color: #d6aaa8;
+    }
+
+    .results {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e2e8e3;
+      text-align: right;
+      vertical-align: top;
+      white-space: nowrap;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+      white-space: normal;
+    }
+
+    thead th {
+      background: #e0ebe3;
+      color: #21332d;
+      font-size: 13px;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .total-row td {
+      font-weight: 700;
+      background: #f4f8f5;
+    }
+
+    .subrow td:first-child {
+      padding-left: 28px;
+      color: var(--muted);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .status {
+      min-height: 22px;
+      margin-top: 10px;
+      color: var(--accent-dark);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 13px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 5px;
+      font-size: 22px;
+    }
+
+    .empty {
+      padding: 18px;
+      background: #fff;
+      border: 1px dashed #aebbb3;
+      border-radius: 8px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 620px) {
+      main {
+        width: min(100% - 20px, 1220px);
+        padding-top: 18px;
+      }
+
+      section {
+        padding: 14px;
+      }
+
+      .grid,
+      .actions {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        min-width: 680px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <h1>Heiz- und Nebenkostenverteilung für EG und OG</h1>
-    <form id="costForm">
-        <div class="section">
-            <h2>Gasheizung und Heizkosten (Heizkostenverordnung beachtet)</h2>
-            <label for="gasCosts">Gesamte Gaskosten (€):</label>
-            <input type="number" id="gasCosts" step="0.01" required>
+  <main>
+    <header>
+      <h1>Heizkosten- und Nebenkostenrechner EG/OG</h1>
+      <p class="lede">Rechner für zwei gleich große Wohnungen mit zentraler Gasheizung, getrennten Wärmemengen- und Warmwasserzählern, Allgemeinstrom über EG und Warmwasser-Kaltwasserbezug über EG.</p>
+      <p class="notice">Hinweis: Die Berechnung bildet die gewünschte 30/70-Verteilung nach Heizkostenverordnung praxisnah ab, ersetzt aber keine Rechts- oder Steuerberatung. Vertragsdetails, Eichfristen, Betriebskostenvereinbarung und lokale Gebührenbescheide bitte gesondert prüfen.</p>
+    </header>
 
-            <label for="heatEG">Wärmemengenzähler Heizkreis EG (kWh):</label>
-            <input type="number" id="heatEG" required>
-
-            <label for="heatOG">Wärmemengenzähler Heizkreis OG (kWh):</label>
-            <input type="number" id="heatOG" required>
-
-            <label for="heatWW">Wärmemengenzähler Warmwasser gesamt (kWh):</label>
-            <input type="number" id="heatWW" required>
-
-            <label for="wwEG">Warmwasserzähler EG (m³):</label>
-            <input type="number" id="wwEG" step="0.01" required>
-
-            <label for="wwOG">Warmwasserzähler OG (m³):</label>
-            <input type="number" id="wwOG" step="0.01" required>
+    <div class="layout">
+      <section>
+        <h2>Grunddaten</h2>
+        <div class="grid">
+          <div class="field">
+            <label for="areaEg">Wohnfläche EG (m²)</label>
+            <input id="areaEg" inputmode="decimal" value="78">
+          </div>
+          <div class="field">
+            <label for="areaOg">Wohnfläche OG (m²)</label>
+            <input id="areaOg" inputmode="decimal" value="78">
+          </div>
+          <div class="field">
+            <label for="gasCost">Gaskosten gesamt (€)</label>
+            <input id="gasCost" inputmode="decimal" placeholder="z. B. 1800">
+            <div class="hint">Betrag laut Rechnung inklusive explizit ausgewiesener CO₂-Kosten.</div>
+          </div>
+          <div class="field">
+            <label for="period">Abrechnungszeitraum</label>
+            <input id="period" placeholder="z. B. 2026">
+          </div>
+          <div class="field">
+            <label for="billingMonths">Abrechnungsdauer (Monate)</label>
+            <input id="billingMonths" inputmode="decimal" value="12">
+          </div>
+          <div class="field">
+            <label for="co2Cost">CO₂-Kosten laut Gasrechnung (€)</label>
+            <input id="co2Cost" inputmode="decimal" placeholder="z. B. 145">
+          </div>
+          <div class="field">
+            <label for="co2Kg">CO₂-Ausstoß laut Gasrechnung (kg)</label>
+            <input id="co2Kg" inputmode="decimal" placeholder="z. B. 3200">
+            <div class="hint">Benötigt für die Staffel nach CO₂KostAufG.</div>
+          </div>
+          <div class="field">
+            <label for="gasPrepayEg">Gas-Vorauszahlung EG im Jahr (€)</label>
+            <input id="gasPrepayEg" inputmode="decimal" placeholder="z. B. 900">
+          </div>
+          <div class="field">
+            <label for="gasPrepayOg">Gas-Vorauszahlung OG im Jahr (€)</label>
+            <input id="gasPrepayOg" inputmode="decimal" placeholder="z. B. 900">
+          </div>
         </div>
+      </section>
 
-        <div class="section">
-            <h2>Wasser (Frisch- und Abwasser)</h2>
-            <label for="coldWaterSub">Zwischenzähler Kaltwasser für Heizung (m³):</label>
-            <input type="number" id="coldWaterSub" step="0.01" required>
-
-            <label for="freshWaterPrice">Frischwasserpreis pro m³ (€):</label>
-            <input type="number" id="freshWaterPrice" step="0.01" required>
-
-            <label for="sewagePrice">Abwasserpreis pro m³ (€):</label>
-            <input type="number" id="sewagePrice" step="0.01" required>
+      <section class="section-alt">
+        <h2>Zählerstände Wärme und Warmwasser</h2>
+        <div class="grid">
+          <div class="field">
+            <label for="heatEg">Wärmemengenzähler Heizkreis EG (kWh)</label>
+            <input id="heatEg" inputmode="decimal" placeholder="z. B. 7200">
+          </div>
+          <div class="field">
+            <label for="heatOg">Wärmemengenzähler Heizkreis OG (kWh)</label>
+            <input id="heatOg" inputmode="decimal" placeholder="z. B. 7600">
+          </div>
+          <div class="field">
+            <label for="wwHeatTotal">Wärmemengenzähler Warmwasser gesamt (kWh)</label>
+            <input id="wwHeatTotal" inputmode="decimal" placeholder="z. B. 2600">
+          </div>
+          <div class="field">
+            <label for="wwEg">Warmwasser EG (m³)</label>
+            <input id="wwEg" inputmode="decimal" placeholder="z. B. 32">
+          </div>
+          <div class="field">
+            <label for="wwOg">Warmwasser OG (m³)</label>
+            <input id="wwOg" inputmode="decimal" placeholder="z. B. 28">
+          </div>
         </div>
+      </section>
 
-        <div class="section">
-            <h2>Strom (Allgemeinstrom und Heizungsstrom)</h2>
-            <label for="totalPower">Allgemeinstrom (Gesamtverbrauch über EG-Zähler) (kWh):</label>
-            <input type="number" id="totalPower" required>
-
-            <label for="heatingPower">Heizungsstrom (aus Heizungs-App abgelesen) (kWh):</label>
-            <input type="number" id="heatingPower" required>
-
-            <label for="powerPrice">Strompreis pro kWh (€):</label>
-            <input type="number" id="powerPrice" step="0.0001" min="0" required>
+      <section>
+        <h2>Wasser über EG</h2>
+        <div class="grid">
+          <div class="field">
+            <label for="feedWater">Zwischenzähler Kaltwasser für Heizung/Warmwasser (m³)</label>
+            <input id="feedWater" inputmode="decimal" placeholder="z. B. 63">
+            <div class="hint">Abwasser entspricht dieser gesamten Frischwassermenge.</div>
+          </div>
+          <div class="field">
+            <label for="freshPrice">Frischwasserpreis (€/m³)</label>
+            <input id="freshPrice" inputmode="decimal" placeholder="z. B. 2,30">
+          </div>
+          <div class="field">
+            <label for="wastePrice">Abwasserpreis (€/m³)</label>
+            <input id="wastePrice" inputmode="decimal" placeholder="z. B. 3,10">
+          </div>
         </div>
+      </section>
 
-        <button type="submit">Berechnen</button>
-    </form>
+      <section class="section-alt">
+        <h2>Strom über EG</h2>
+        <div class="grid">
+          <div class="field">
+            <label for="electricityTotal">Allgemeinstrom (Zählerstand gesamt, kWh)</label>
+            <input id="electricityTotal" inputmode="decimal" placeholder="z. B. 520">
+            <div class="hint">Hier den gesamten Zählerstand eintragen, inklusive Heizungsstrom.</div>
+          </div>
+          <div class="field">
+            <label for="heatingElectricity">Heizungsstrom laut App (kWh)</label>
+            <input id="heatingElectricity" inputmode="decimal" placeholder="z. B. 180">
+          </div>
+          <div class="field">
+            <label for="electricityPrice">Strompreis (€/kWh)</label>
+            <input id="electricityPrice" inputmode="decimal" placeholder="z. B. 0,36">
+          </div>
+        </div>
+      </section>
 
-    <div id="storageButtons">
-        <button id="saveData">Daten speichern</button>
-        <button id="clearData">Daten löschen</button>
+      <section>
+        <h2>Aktionen</h2>
+        <div class="actions">
+          <button class="primary" id="calculate">Berechnen</button>
+          <button class="secondary" id="save">Werte speichern</button>
+          <button class="danger" id="clear">Gespeicherte Werte löschen</button>
+        </div>
+        <div class="status" id="status" aria-live="polite"></div>
+      </section>
+
+      <section class="results" id="results">
+        <h2>Ergebnisse</h2>
+        <div class="empty">Noch keine Berechnung. Bitte Werte eingeben und auf „Berechnen“ klicken.</div>
+      </section>
     </div>
+  </main>
 
-    <div id="results"></div>
+  <script>
+    const storageKey = "eg-og-heizkosten-rechner-v1";
+    const inputIds = [
+      "areaEg", "areaOg", "gasCost", "period", "billingMonths", "co2Cost", "co2Kg", "heatEg", "heatOg", "wwHeatTotal",
+      "wwEg", "wwOg", "gasPrepayEg", "gasPrepayOg", "feedWater", "freshPrice", "wastePrice",
+      "electricityTotal", "heatingElectricity", "electricityPrice"
+    ];
 
-    <script>
-        const form = document.getElementById('costForm');
-        const inputs = form.querySelectorAll('input');
-        const storageKey = 'heizkostenData';
+    const labels = {
+      areaEg: "Wohnfläche EG",
+      areaOg: "Wohnfläche OG",
+      gasCost: "Gaskosten gesamt",
+      billingMonths: "Abrechnungsdauer",
+      co2Cost: "CO₂-Kosten laut Gasrechnung",
+      co2Kg: "CO₂-Ausstoß laut Gasrechnung",
+      gasPrepayEg: "Gas-Vorauszahlung EG",
+      gasPrepayOg: "Gas-Vorauszahlung OG",
+      heatEg: "Wärmemengenzähler Heizkreis EG",
+      heatOg: "Wärmemengenzähler Heizkreis OG",
+      wwHeatTotal: "Wärmemengenzähler Warmwasser gesamt",
+      wwEg: "Warmwasser EG",
+      wwOg: "Warmwasser OG",
+      feedWater: "Zwischenzähler Kaltwasser für Heizung/Warmwasser",
+      freshPrice: "Frischwasserpreis",
+      wastePrice: "Abwasserpreis",
+      electricityTotal: "Allgemeinstrom",
+      heatingElectricity: "Heizungsstrom",
+      electricityPrice: "Strompreis"
+    };
 
-        // Load from localStorage
-        const savedData = JSON.parse(localStorage.getItem(storageKey));
-        if (savedData) {
-            inputs.forEach(input => {
-                if (savedData[input.id]) {
-                    input.value = savedData[input.id];
-                }
-            });
+    const $ = (id) => document.getElementById(id);
+
+    function parseNumber(id) {
+      const raw = $(id).value.trim();
+      if (!raw) return 0;
+      const compact = raw.replace(/\s/g, "");
+      const normalized = compact.includes(",")
+        ? compact.replace(/\./g, "").replace(",", ".")
+        : compact;
+      const value = Number(normalized);
+      return Number.isFinite(value) ? value : NaN;
+    }
+
+    function collectValues() {
+      return Object.fromEntries(inputIds.map((id) => [id, id === "period" ? $(id).value.trim() : parseNumber(id)]));
+    }
+
+    function formatEuro(value) {
+      return value.toLocaleString("de-DE", { style: "currency", currency: "EUR" });
+    }
+
+    function formatNumber(value, digits = 2) {
+      return value.toLocaleString("de-DE", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    }
+
+    function pct(value) {
+      return `${formatNumber(value * 100, 2)} %`;
+    }
+
+    function co2Stage(specificCo2) {
+      const stages = [
+        { max: 12, tenant: 1.00, landlord: 0.00, label: "&lt; 12 kg CO₂/m²/a" },
+        { max: 17, tenant: 0.90, landlord: 0.10, label: "12 bis &lt; 17 kg CO₂/m²/a" },
+        { max: 22, tenant: 0.80, landlord: 0.20, label: "17 bis &lt; 22 kg CO₂/m²/a" },
+        { max: 27, tenant: 0.70, landlord: 0.30, label: "22 bis &lt; 27 kg CO₂/m²/a" },
+        { max: 32, tenant: 0.60, landlord: 0.40, label: "27 bis &lt; 32 kg CO₂/m²/a" },
+        { max: 37, tenant: 0.50, landlord: 0.50, label: "32 bis &lt; 37 kg CO₂/m²/a" },
+        { max: 42, tenant: 0.40, landlord: 0.60, label: "37 bis &lt; 42 kg CO₂/m²/a" },
+        { max: 47, tenant: 0.30, landlord: 0.70, label: "42 bis &lt; 47 kg CO₂/m²/a" },
+        { max: 52, tenant: 0.20, landlord: 0.80, label: "47 bis &lt; 52 kg CO₂/m²/a" },
+        { max: Infinity, tenant: 0.05, landlord: 0.95, label: "≥ 52 kg CO₂/m²/a" }
+      ];
+      return stages.find((stage) => specificCo2 < stage.max);
+    }
+
+    function share(part, total) {
+      return total > 0 ? part / total : 0;
+    }
+
+    function moneyRow(label, base, eg, og, note = "") {
+      return `<tr>
+        <td>${label}${note ? `<div class="hint">${note}</div>` : ""}</td>
+        <td>${base}</td>
+        <td>${formatEuro(eg)}</td>
+        <td>${formatEuro(og)}</td>
+        <td>${formatEuro(eg + og)}</td>
+      </tr>`;
+    }
+
+    function validate(values) {
+      const errors = [];
+      for (const id of inputIds) {
+        if (id !== "period" && Number.isNaN(values[id])) {
+          errors.push(`${labels[id]} ist keine gültige Zahl.`);
         }
+      }
+      const requiredPositive = ["areaEg", "areaOg", "gasCost"];
+      for (const id of requiredPositive) {
+        if (values[id] <= 0) errors.push(`${labels[id]} muss größer als 0 sein.`);
+      }
+      if (values.billingMonths <= 0) errors.push("Die Abrechnungsdauer muss größer als 0 sein.");
+      if (values.co2Cost < 0) errors.push("Die CO₂-Kosten dürfen nicht negativ sein.");
+      if (values.co2Kg < 0) errors.push("Der CO₂-Ausstoß darf nicht negativ sein.");
+      if (values.co2Cost > values.gasCost) {
+        errors.push("Die CO₂-Kosten dürfen nicht höher sein als die gesamten Gaskosten.");
+      }
+      if (values.gasPrepayEg < 0 || values.gasPrepayOg < 0) {
+        errors.push("Gas-Vorauszahlungen dürfen nicht negativ sein.");
+      }
+      if (values.co2Cost > 0 && values.co2Kg <= 0) {
+        errors.push("Für die CO₂-Kostenaufteilung bitte den CO₂-Ausstoß laut Gasrechnung eintragen.");
+      }
+      if (values.heatingElectricity > values.electricityTotal) {
+        errors.push("Der Heizungsstrom darf nicht größer sein als der gesamte Allgemeinstrom-Zählerstand.");
+      }
+      if (values.feedWater < values.wwEg + values.wwOg) {
+        errors.push("Der Zwischenzähler Kaltwasser ist kleiner als die Summe der Warmwasserzähler. Bitte prüfen.");
+      }
+      if (values.gasCost > 0 && values.heatEg + values.heatOg + values.wwHeatTotal <= 0) {
+        errors.push("Für die Gasverteilung muss mindestens eine Wärmemenge eingetragen sein.");
+      }
+      if (values.wwHeatTotal > 0 && values.wwEg + values.wwOg <= 0) {
+        errors.push("Für Warmwasser-Verbrauchskosten müssen die Warmwasserzähler EG/OG eingetragen sein.");
+      }
+      return errors;
+    }
 
-        // Save / Clear buttons
-        document.getElementById('saveData').addEventListener('click', () => {
-            const data = {};
-            inputs.forEach(input => {
-                data[input.id] = input.value;
-            });
-            localStorage.setItem(storageKey, JSON.stringify(data));
-            alert('Daten gespeichert!');
+    function renderError(errors) {
+      $("results").innerHTML = `
+        <h2>Ergebnisse</h2>
+        <div class="notice"><strong>Bitte Eingaben prüfen:</strong><br>${errors.map((e) => `• ${e}`).join("<br>")}</div>
+      `;
+    }
+
+    function calculate() {
+      const v = collectValues();
+      const errors = validate(v);
+      if (errors.length) {
+        renderError(errors);
+        return;
+      }
+
+      const totalArea = v.areaEg + v.areaOg;
+      const areaShareEg = share(v.areaEg, totalArea);
+      const areaShareOg = share(v.areaOg, totalArea);
+
+      const heatTotal = v.heatEg + v.heatOg;
+      const deliveredTotal = heatTotal + v.wwHeatTotal;
+      const netGasCost = v.gasCost - v.co2Cost;
+      const heatCostPool = deliveredTotal > 0 ? netGasCost * share(heatTotal, deliveredTotal) : 0;
+      const wwCostPool = deliveredTotal > 0 ? netGasCost * share(v.wwHeatTotal, deliveredTotal) : 0;
+
+      const heatBasePool = heatCostPool * 0.30;
+      const heatUsePool = heatCostPool * 0.70;
+      const heatShareEg = share(v.heatEg, heatTotal);
+      const heatShareOg = share(v.heatOg, heatTotal);
+      const heatBaseEg = heatBasePool * areaShareEg;
+      const heatBaseOg = heatBasePool * areaShareOg;
+      const heatUseEg = heatUsePool * heatShareEg;
+      const heatUseOg = heatUsePool * heatShareOg;
+      const heatingGasEg = heatBaseEg + heatUseEg;
+      const heatingGasOg = heatBaseOg + heatUseOg;
+
+      const wwM3Total = v.wwEg + v.wwOg;
+      const wwBasePool = wwCostPool * 0.30;
+      const wwUsePool = wwCostPool * 0.70;
+      const wwShareEg = share(v.wwEg, wwM3Total);
+      const wwShareOg = share(v.wwOg, wwM3Total);
+      const wwBaseEg = wwBasePool * areaShareEg;
+      const wwBaseOg = wwBasePool * areaShareOg;
+      const wwUseEg = wwUsePool * wwShareEg;
+      const wwUseOg = wwUsePool * wwShareOg;
+      const wwGasEg = wwBaseEg + wwUseEg;
+      const wwGasOg = wwBaseOg + wwUseOg;
+
+      const gasEg = heatingGasEg + wwGasEg;
+      const gasOg = heatingGasOg + wwGasOg;
+
+      const refillM3 = Math.max(0, v.feedWater - wwM3Total);
+      const freshCostTotal = v.feedWater * v.freshPrice;
+      const wasteCostTotal = v.feedWater * v.wastePrice;
+      const wwFreshCost = wwM3Total * v.freshPrice;
+      const refillFreshCost = refillM3 * v.freshPrice;
+      const wwWasteCost = wwM3Total * v.wastePrice;
+      const refillWasteCost = refillM3 * v.wastePrice;
+      const waterEg = (v.wwEg * v.freshPrice) + (refillFreshCost / 2) + (v.wwEg * v.wastePrice) + (refillWasteCost / 2);
+      const waterOg = (v.wwOg * v.freshPrice) + (refillFreshCost / 2) + (v.wwOg * v.wastePrice) + (refillWasteCost / 2);
+
+      const restElectricity = Math.max(0, v.electricityTotal - v.heatingElectricity);
+      const electricityTotalCost = v.electricityTotal * v.electricityPrice;
+      const heatingElectricityCost = v.heatingElectricity * v.electricityPrice;
+      const restElectricityCost = restElectricity * v.electricityPrice;
+      const wwHeatEg = v.wwHeatTotal * wwShareEg;
+      const wwHeatOg = v.wwHeatTotal * wwShareOg;
+      const deliveredEg = v.heatEg + wwHeatEg;
+      const deliveredOg = v.heatOg + wwHeatOg;
+      const deliveredByUnitTotal = deliveredEg + deliveredOg;
+      const deliveredShareEg = share(deliveredEg, deliveredByUnitTotal);
+      const deliveredShareOg = share(deliveredOg, deliveredByUnitTotal);
+      const electricityEg = (restElectricityCost / 2) + (heatingElectricityCost * deliveredShareEg);
+      const electricityOg = (restElectricityCost / 2) + (heatingElectricityCost * deliveredShareOg);
+
+      const specificCo2 = v.co2Kg > 0 ? (v.co2Kg / totalArea) * (12 / v.billingMonths) : 0;
+      const stage = co2Stage(specificCo2);
+      const co2TenantTotal = v.co2Cost * stage.tenant;
+      const co2Landlord = v.co2Cost * stage.landlord;
+      const co2Eg = co2TenantTotal * deliveredShareEg;
+      const co2Og = co2TenantTotal * deliveredShareOg;
+      const gasTenantEg = gasEg + co2Eg;
+      const gasTenantOg = gasOg + co2Og;
+      const gasBalanceEg = gasTenantEg - v.gasPrepayEg;
+      const gasBalanceOg = gasTenantOg - v.gasPrepayOg;
+
+      const egTotalCost = gasTenantEg + waterEg + electricityEg;
+      const ogTotalCost = gasTenantOg + waterOg + electricityOg;
+      const ogToEg = waterOg + electricityOg;
+      const egOpenToLandlord = Math.max(0, gasBalanceEg);
+      const ogOpenToLandlord = Math.max(0, gasBalanceOg);
+      const landlordRefundEg = Math.max(0, -gasBalanceEg);
+      const landlordRefundOg = Math.max(0, -gasBalanceOg);
+
+      $("results").innerHTML = `
+        <h2>Ergebnisse${v.period ? ` für ${v.period}` : ""}</h2>
+
+        <div class="summary-grid">
+          <div class="metric"><span>EG Kostenanteil gesamt</span><strong>${formatEuro(egTotalCost)}</strong></div>
+          <div class="metric"><span>OG Kostenanteil gesamt</span><strong>${formatEuro(ogTotalCost)}</strong></div>
+          <div class="metric"><span>OG erstattet an EG</span><strong>${formatEuro(ogToEg)}</strong></div>
+        </div>
+
+        <div>
+          <h3>Gas ohne CO₂-Kosten: Aufteilung nach Wärmemenge und 30/70-Regel</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Position</th><th>Zwischenwert</th><th>EG</th><th>OG</th><th>Summe</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Gaskosten gesamt laut Rechnung</td><td>inklusive CO₂-Kosten</td><td></td><td></td><td>${formatEuro(v.gasCost)}</td></tr>
+                <tr><td>abzüglich CO₂-Kosten</td><td>separat nach CO₂KostAufG verteilt</td><td></td><td></td><td>− ${formatEuro(v.co2Cost)}</td></tr>
+                ${moneyRow("Bereinigte Gaskosten", `${formatNumber(deliveredTotal)} kWh gelieferte Wärme`, gasEg, gasOg)}
+                ${moneyRow("Kostenblock Heizung", `${formatNumber(heatTotal)} kWh = ${pct(share(heatTotal, deliveredTotal))} der Wärme`, heatingGasEg, heatingGasOg)}
+                ${moneyRow("Heizung Grundkosten 30 %", `${formatEuro(heatBasePool)} nach Wohnfläche (${pct(areaShareEg)} / ${pct(areaShareOg)})`, heatBaseEg, heatBaseOg)}
+                ${moneyRow("Heizung Verbrauchskosten 70 %", `${formatEuro(heatUsePool)} nach Heizkreis-kWh (${formatNumber(v.heatEg)} / ${formatNumber(v.heatOg)})`, heatUseEg, heatUseOg)}
+                ${moneyRow("Kostenblock Warmwasser", `${formatNumber(v.wwHeatTotal)} kWh = ${pct(share(v.wwHeatTotal, deliveredTotal))} der Wärme`, wwGasEg, wwGasOg)}
+                ${moneyRow("Warmwasser Grundkosten 30 %", `${formatEuro(wwBasePool)} nach Wohnfläche (${pct(areaShareEg)} / ${pct(areaShareOg)})`, wwBaseEg, wwBaseOg)}
+                ${moneyRow("Warmwasser Verbrauchskosten 70 %", `${formatEuro(wwUsePool)} nach Warmwasser-m³ (${formatNumber(v.wwEg)} / ${formatNumber(v.wwOg)})`, wwUseEg, wwUseOg)}
+                <tr class="total-row"><td>Bereinigter Gasanteil je Wohnung</td><td>${formatEuro(netGasCost)}</td><td>${formatEuro(gasEg)}</td><td>${formatEuro(gasOg)}</td><td>${formatEuro(gasEg + gasOg)}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h3>CO₂-Kosten: Aufteilung nach CO₂-Kostenaufteilungsgesetz</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Position</th><th>Zwischenwert</th><th>Vermieter</th><th>EG</th><th>OG</th><th>Summe</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>CO₂-Ausstoß Gebäude</td>
+                  <td>${formatNumber(v.co2Kg)} kg / ${formatNumber(totalArea)} m² / ${formatNumber(v.billingMonths)} Monate = ${formatNumber(specificCo2)} kg CO₂/m²/a</td>
+                  <td></td><td></td><td></td><td></td>
+                </tr>
+                <tr>
+                  <td>CO₂KostAufG-Stufe</td>
+                  <td>${stage.label}</td>
+                  <td>${pct(stage.landlord)}</td>
+                  <td colspan="2">Mieterseite zusammen ${pct(stage.tenant)}</td>
+                  <td>${formatEuro(v.co2Cost)}</td>
+                </tr>
+                <tr>
+                  <td>Vermieteranteil CO₂-Kosten</td>
+                  <td>trägt der Vermieter selbst</td>
+                  <td>${formatEuro(co2Landlord)}</td>
+                  <td>${formatEuro(0)}</td>
+                  <td>${formatEuro(0)}</td>
+                  <td>${formatEuro(co2Landlord)}</td>
+                </tr>
+                <tr>
+                  <td>Mieteranteil CO₂-Kosten</td>
+                  <td>${formatEuro(co2TenantTotal)} verbrauchsabhängig nach gelieferter Wärme (${pct(deliveredShareEg)} / ${pct(deliveredShareOg)})</td>
+                  <td>${formatEuro(0)}</td>
+                  <td>${formatEuro(co2Eg)}<div class="hint">${formatNumber(deliveredEg)} kWh</div></td>
+                  <td>${formatEuro(co2Og)}<div class="hint">${formatNumber(deliveredOg)} kWh</div></td>
+                  <td>${formatEuro(co2TenantTotal)}</td>
+                </tr>
+                <tr class="total-row">
+                  <td>CO₂-Kosten gesamt</td>
+                  <td>aus der Gasrechnung herausgerechnet und separat verteilt</td>
+                  <td>${formatEuro(co2Landlord)}</td>
+                  <td>${formatEuro(co2Eg)}</td>
+                  <td>${formatEuro(co2Og)}</td>
+                  <td>${formatEuro(v.co2Cost)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h3>Wasser: Kaltwasser für Warmwasser/Heizung über EG</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Position</th><th>Zwischenwert</th><th>EG</th><th>OG</th><th>Summe</th></tr>
+              </thead>
+              <tbody>
+                ${moneyRow("Frischwasser Warmwasserverbrauch", `${formatNumber(wwM3Total)} m³ verbrauchsabhängig`, v.wwEg * v.freshPrice, v.wwOg * v.freshPrice)}
+                ${moneyRow("Frischwasser Differenz/Nachfüllung Heizkreis", `${formatNumber(refillM3)} m³ 50/50`, refillFreshCost / 2, refillFreshCost / 2)}
+                ${moneyRow("Abwasser Warmwasserverbrauch", `${formatNumber(wwM3Total)} m³ verbrauchsabhängig`, v.wwEg * v.wastePrice, v.wwOg * v.wastePrice)}
+                ${moneyRow("Abwasser Differenz/Nachfüllung Heizkreis", `${formatNumber(refillM3)} m³ 50/50`, refillWasteCost / 2, refillWasteCost / 2)}
+                <tr class="total-row"><td>Wasser/Abwasser, zunächst vom EG bezahlt</td><td>${formatNumber(v.feedWater)} m³, ${formatEuro(freshCostTotal + wasteCostTotal)}</td><td>${formatEuro(waterEg)}</td><td>${formatEuro(waterOg)}</td><td>${formatEuro(waterEg + waterOg)}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h3>Strom: Allgemeinstrom über EG, Heizungsstrom abgezogen</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Position</th><th>Zwischenwert</th><th>EG</th><th>OG</th><th>Summe</th></tr>
+              </thead>
+              <tbody>
+                ${moneyRow("Allgemeinstrom (Zählerstand gesamt)", `${formatNumber(v.electricityTotal)} kWh × ${formatEuro(v.electricityPrice)}/kWh`, electricityEg, electricityOg)}
+                <tr class="subrow">
+                  <td>davon Heizungsstrom (abgezogen)</td>
+                  <td>${formatNumber(v.heatingElectricity)} kWh = ${formatEuro(heatingElectricityCost)}, Verteilung nach gelieferter Wärme</td>
+                  <td>${formatEuro(heatingElectricityCost * deliveredShareEg)}<div class="hint">${formatNumber(deliveredEg)} kWh = ${pct(deliveredShareEg)}</div></td>
+                  <td>${formatEuro(heatingElectricityCost * deliveredShareOg)}<div class="hint">${formatNumber(deliveredOg)} kWh = ${pct(deliveredShareOg)}</div></td>
+                  <td>${formatEuro(heatingElectricityCost)}</td>
+                </tr>
+                <tr class="subrow">
+                  <td>davon Rest-Allgemeinstrom</td>
+                  <td>${formatNumber(restElectricity)} kWh = ${formatEuro(restElectricityCost)}, 50/50 geteilt</td>
+                  <td>${formatEuro(restElectricityCost / 2)}</td>
+                  <td>${formatEuro(restElectricityCost / 2)}</td>
+                  <td>${formatEuro(restElectricityCost)}</td>
+                </tr>
+                <tr class="total-row"><td>Strom, zunächst vom EG bezahlt</td><td>${formatEuro(electricityTotalCost)}</td><td>${formatEuro(electricityEg)}</td><td>${formatEuro(electricityOg)}</td><td>${formatEuro(electricityEg + electricityOg)}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h3>Zusammenfassung und Zahlungsflüsse</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Kostenblock / Zahlung</th><th>Ausgangslage</th><th>EG</th><th>OG</th><th>Summe</th></tr>
+              </thead>
+              <tbody>
+                ${moneyRow("Gas ohne CO₂-Kosten", "Vermieter zahlt Rechnung, beide Wohnungen erstatten ihren bereinigten Anteil", gasEg, gasOg)}
+                ${moneyRow("CO₂-Kosten Mieteranteil", `Vermieter trägt zusätzlich selbst ${formatEuro(co2Landlord)}`, co2Eg, co2Og)}
+                ${moneyRow("Wasser und Abwasser", "EG zahlt Rechnung zunächst alleine", waterEg, waterOg)}
+                ${moneyRow("Strom", "EG zahlt Rechnung zunächst alleine", electricityEg, electricityOg)}
+                <tr class="total-row"><td>Kostenanteil je Wohnung</td><td>Gas + Wasser + Strom</td><td>${formatEuro(egTotalCost)}</td><td>${formatEuro(ogTotalCost)}</td><td>${formatEuro(egTotalCost + ogTotalCost)}</td></tr>
+                <tr><td>Gas-Vorauszahlungen an Vermieter</td><td>bereits im Jahr gezahlt</td><td>− ${formatEuro(v.gasPrepayEg)}</td><td>− ${formatEuro(v.gasPrepayOg)}</td><td>− ${formatEuro(v.gasPrepayEg + v.gasPrepayOg)}</td></tr>
+                <tr><td>Vermieter trägt selbst</td><td>CO₂-Kostenanteil Vermieter nach CO₂KostAufG</td><td>${formatEuro(0)}</td><td>${formatEuro(0)}</td><td>${formatEuro(co2Landlord)}</td></tr>
+                <tr><td>Gas-Saldo EG gegenüber Vermieter</td><td>${gasBalanceEg >= 0 ? "Nachzahlung EG an Vermieter" : "Guthaben EG vom Vermieter"}</td><td>${gasBalanceEg >= 0 ? formatEuro(gasBalanceEg) : `− ${formatEuro(landlordRefundEg)}`}</td><td>${formatEuro(0)}</td><td>${gasBalanceEg >= 0 ? formatEuro(gasBalanceEg) : `− ${formatEuro(landlordRefundEg)}`}</td></tr>
+                <tr><td>Gas-Saldo OG gegenüber Vermieter</td><td>${gasBalanceOg >= 0 ? "Nachzahlung OG an Vermieter" : "Guthaben OG vom Vermieter"}</td><td>${formatEuro(0)}</td><td>${gasBalanceOg >= 0 ? formatEuro(gasBalanceOg) : `− ${formatEuro(landlordRefundOg)}`}</td><td>${gasBalanceOg >= 0 ? formatEuro(gasBalanceOg) : `− ${formatEuro(landlordRefundOg)}`}</td></tr>
+                <tr><td>Offene Nachzahlung an Vermieter</td><td>nach Abzug der Gas-Vorauszahlungen</td><td>${formatEuro(egOpenToLandlord)}</td><td>${formatEuro(ogOpenToLandlord)}</td><td>${formatEuro(egOpenToLandlord + ogOpenToLandlord)}</td></tr>
+                <tr><td>Guthaben vom Vermieter</td><td>falls Vorauszahlung höher als Gasanteil war</td><td>${formatEuro(landlordRefundEg)}</td><td>${formatEuro(landlordRefundOg)}</td><td>${formatEuro(landlordRefundEg + landlordRefundOg)}</td></tr>
+                <tr class="total-row"><td>OG erstattet an EG</td><td>Wasser/Abwasser OG + Strom OG</td><td>${formatEuro(0)}</td><td>${formatEuro(ogToEg)}</td><td>${formatEuro(ogToEg)}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function saveValues() {
+      const raw = Object.fromEntries(inputIds.map((id) => [id, $(id).value]));
+      localStorage.setItem(storageKey, JSON.stringify(raw));
+      $("status").textContent = "Werte wurden lokal im Browser gespeichert.";
+    }
+
+    function loadValues() {
+      const saved = localStorage.getItem(storageKey);
+      if (!saved) return;
+      try {
+        const data = JSON.parse(saved);
+        inputIds.forEach((id) => {
+          if (Object.prototype.hasOwnProperty.call(data, id)) $(id).value = data[id];
         });
+        $("status").textContent = "Gespeicherte Werte geladen.";
+      } catch {
+        localStorage.removeItem(storageKey);
+      }
+    }
 
-        document.getElementById('clearData').addEventListener('click', () => {
-            localStorage.removeItem(storageKey);
-            inputs.forEach(input => input.value = '');
-            document.getElementById('results').innerHTML = '';
-            alert('Daten gelöscht!');
-        });
+    function clearValues() {
+      localStorage.removeItem(storageKey);
+      $("status").textContent = "Gespeicherte Werte wurden gelöscht.";
+    }
 
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
+    $("calculate").addEventListener("click", calculate);
+    $("save").addEventListener("click", saveValues);
+    $("clear").addEventListener("click", clearValues);
+    inputIds.forEach((id) => {
+      $(id).addEventListener("keydown", (event) => {
+        if (event.key === "Enter") calculate();
+      });
+    });
 
-            // Eingaben
-            const gasCosts = parseFloat(document.getElementById('gasCosts').value);
-            const heatEG = parseFloat(document.getElementById('heatEG').value);
-            const heatOG = parseFloat(document.getElementById('heatOG').value);
-            const heatWW = parseFloat(document.getElementById('heatWW').value);
-            const wwEG = parseFloat(document.getElementById('wwEG').value);
-            const wwOG = parseFloat(document.getElementById('wwOG').value);
-            const coldWaterSub = parseFloat(document.getElementById('coldWaterSub').value);
-            const freshWaterPrice = parseFloat(document.getElementById('freshWaterPrice').value);
-            const sewagePrice = parseFloat(document.getElementById('sewagePrice').value);
-            const totalPower = parseFloat(document.getElementById('totalPower').value);
-            const heatingPower = parseFloat(document.getElementById('heatingPower').value);
-            const powerPrice = parseFloat(document.getElementById('powerPrice').value);
-
-            // Gas/Heizung
-            const totalHeatHeating = heatEG + heatOG;
-            const totalHeat = totalHeatHeating + heatWW;
-            const costPerKWh = totalHeat > 0 ? gasCosts / totalHeat : 0;
-
-            const heatingCosts = costPerKWh * totalHeatHeating;
-            const baseHeating = heatingCosts * 0.3;
-            const consHeating = heatingCosts * 0.7;
-            const basePerFlat = baseHeating / 2;
-            const consEGHeating = totalHeatHeating > 0 ? consHeating * (heatEG / totalHeatHeating) : 0;
-            const consOGHeating = totalHeatHeating > 0 ? consHeating * (heatOG / totalHeatHeating) : 0;
-            const roomHeatingEG = basePerFlat + consEGHeating;
-            const roomHeatingOG = basePerFlat + consOGHeating;
-
-            const wwCosts = costPerKWh * heatWW;
-            const baseWW = wwCosts * 0.3;
-            const consWW = wwCosts * 0.7;
-            const baseWWPerFlat = baseWW / 2;
-            const totalWW = wwEG + wwOG;
-            const consWWEG = totalWW > 0 ? consWW * (wwEG / totalWW) : 0;
-            const consWWOG = totalWW > 0 ? consWW * (wwOG / totalWW) : 0;
-            const wwEGTotal = baseWWPerFlat + consWWEG;
-            const wwOGTotal = baseWWPerFlat + consWWOG;
-
-            const totalEGGas = roomHeatingEG + wwEGTotal;
-            const totalOGGas = roomHeatingOG + wwOGTotal;
-
-            // Wasser
-            const wwEGShare = totalWW > 0 ? wwEG / totalWW : 0.5;
-            const wwOGShare = totalWW > 0 ? wwOG / totalWW : 0.5;
-
-            const freshCostsTotal = coldWaterSub * freshWaterPrice;
-
-            const freshWWPart = totalWW * freshWaterPrice;
-            const freshWWEG = freshWWPart * wwEGShare;
-            const freshWWOG = freshWWPart * wwOGShare;
-
-            const diffFresh = Math.max(0, freshCostsTotal - freshWWPart);
-            const diffFreshPerFlat = diffFresh / 2;
-
-            const freshEG = freshWWEG + diffFreshPerFlat;
-            const freshOG = freshWWOG + diffFreshPerFlat;
-
-            const sewageCostsTotal = coldWaterSub * sewagePrice;
-            const sewageEG = freshCostsTotal > 0 ? sewageCostsTotal * (freshEG / freshCostsTotal) : sewageCostsTotal / 2;
-            const sewageOG = freshCostsTotal > 0 ? sewageCostsTotal * (freshOG / freshCostsTotal) : sewageCostsTotal / 2;
-
-            // Strom
-            const generalPower = Math.max(0, totalPower - heatingPower);
-            const generalCosts = generalPower * powerPrice;
-            const generalPerFlat = generalCosts / 2;
-
-            const heatingCostsTotal = heatingPower * powerPrice;
-            const deliveredEG = heatEG + heatWW * wwEGShare;
-            const deliveredOG = heatOG + heatWW * wwOGShare;
-            const totalDelivered = deliveredEG + deliveredOG;
-            const heatingPowerEG = totalDelivered > 0 ? heatingCostsTotal * (deliveredEG / totalDelivered) : heatingCostsTotal / 2;
-            const heatingPowerOG = totalDelivered > 0 ? heatingCostsTotal * (deliveredOG / totalDelivered) : heatingCostsTotal / 2;
-
-            const totalPowerEG = generalPerFlat + heatingPowerEG;
-            const totalPowerOG = generalPerFlat + heatingPowerOG;
-
-            // Erstattung OG → EG
-            const reimbursement = freshOG + sewageOG + totalPowerOG;
-
-            // Ausgabe mit Zwischenwerten
-            let results = `
-                <h2>Ergebnisse</h2>
-
-                <h3>Gas/Heizkosten (Umlage vom Vermieter)</h3>
-                <table>
-                    <tr><th>Beschreibung</th><th>EG (€)</th><th>OG (€)</th><th>Erklärung / Zwischenwerte</th></tr>
-                    <tr><td>Basis Raumheizung (30% Grundkosten, 50/50)</td><td>${basePerFlat.toFixed(2)}</td><td>${basePerFlat.toFixed(2)}</td><td>30% von ${heatingCosts.toFixed(2)} € = ${baseHeating.toFixed(2)} € → 50/50</td></tr>
-                    <tr><td>Verbrauch Raumheizung (70%)</td><td>${consEGHeating.toFixed(2)}</td><td>${consOGHeating.toFixed(2)}</td><td>70% von ${heatingCosts.toFixed(2)} € = ${consHeating.toFixed(2)} € → nach kWh (${heatEG.toFixed(1)} / ${heatOG.toFixed(1)} kWh)</td></tr>
-                    <tr><td>Raumheizung gesamt</td><td>${roomHeatingEG.toFixed(2)}</td><td>${roomHeatingOG.toFixed(2)}</td><td></td></tr>
-                    <tr><td>Basis Warmwasser (30% Grundkosten, 50/50)</td><td>${baseWWPerFlat.toFixed(2)}</td><td>${baseWWPerFlat.toFixed(2)}</td><td>30% von ${wwCosts.toFixed(2)} € = ${baseWW.toFixed(2)} € → 50/50</td></tr>
-                    <tr><td>Verbrauch Warmwasser (70%)</td><td>${consWWEG.toFixed(2)}</td><td>${consWWOG.toFixed(2)}</td><td>70% von ${wwCosts.toFixed(2)} € = ${consWW.toFixed(2)} € → nach m³ (${wwEG.toFixed(2)} / ${wwOG.toFixed(2)} m³)</td></tr>
-                    <tr><td>Warmwasser gesamt</td><td>${wwEGTotal.toFixed(2)}</td><td>${wwOGTotal.toFixed(2)}</td><td></td></tr>
-                    <tr class="highlight"><td><strong>Gesamt Gasumlage</strong></td><td><strong>${totalEGGas.toFixed(2)}</strong></td><td><strong>${totalOGGas.toFixed(2)}</strong></td><td>Gesamtkosten ${gasCosts.toFixed(2)} € / ${totalHeat.toFixed(1)} kWh = ${costPerKWh.toFixed(4)} €/kWh</td></tr>
-                </table>
-
-                <h3>Wasser (Frisch- und Abwasser)</h3>
-                <table>
-                    <tr><th>Beschreibung</th><th>Gesamt (€)</th><th>EG (€)</th><th>OG (€)</th><th>Erklärung / Zwischenwerte</th></tr>
-                    <tr><td>Frischwasser WW (verbrauchsabhängig)</td><td>${freshWWPart.toFixed(2)}</td><td>${freshWWEG.toFixed(2)}</td><td>${freshWWOG.toFixed(2)}</td><td>${totalWW.toFixed(2)} m³ × ${freshWaterPrice.toFixed(2)} €/m³ → nach m³-Verbrauch</td></tr>
-                    <tr><td>Frischwasser Differenz (z. B. Nachfüllung)</td><td>${diffFresh.toFixed(2)}</td><td>${diffFreshPerFlat.toFixed(2)}</td><td>${diffFreshPerFlat.toFixed(2)}</td><td>(${coldWaterSub.toFixed(2)} - ${totalWW.toFixed(2)}) m³ × ${freshWaterPrice.toFixed(2)} €/m³ → 50/50</td></tr>
-                    <tr><td><strong>Frischwasser gesamt</strong></td><td><strong>${freshCostsTotal.toFixed(2)}</strong></td><td><strong>${freshEG.toFixed(2)}</strong></td><td><strong>${freshOG.toFixed(2)}</strong></td><td>${coldWaterSub.toFixed(2)} m³ × ${freshWaterPrice.toFixed(2)} €/m³</td></tr>
-                    <tr><td>Abwasser</td><td>${sewageCostsTotal.toFixed(2)}</td><td>${sewageEG.toFixed(2)}</td><td>${sewageOG.toFixed(2)}</td><td>${coldWaterSub.toFixed(2)} m³ × ${sewagePrice.toFixed(2)} €/m³ → proportional zum Frischwasseranteil</td></tr>
-                </table>
-
-                <h3>Strom (Allgemeinstrom + Heizungsstrom)</h3>
-                <table>
-                    <tr><th>Beschreibung</th><th>Gesamt (€)</th><th>EG (€)</th><th>OG (€)</th><th>Erklärung / Zwischenwerte</th></tr>
-                    <tr><td>Allgemeinstrom (Zählerstand gesamt)</td><td>${(totalPower * powerPrice).toFixed(2)}</td><td>${totalPowerEG.toFixed(2)}</td><td>${totalPowerOG.toFixed(2)}</td><td>${totalPower.toFixed(1)} kWh × ${powerPrice.toFixed(2)} €/kWh</td></tr>
-                    <tr><td>&nbsp;&nbsp;└ davon Allgemeinstrom (ohne Heizung)</td><td>${generalCosts.toFixed(2)}</td><td>${generalPerFlat.toFixed(2)}</td><td>${generalPerFlat.toFixed(2)}</td><td>${generalPower.toFixed(1)} kWh × ${powerPrice.toFixed(2)} €/kWh → 50/50</td></tr>
-                    <tr><td>&nbsp;&nbsp;└ davon Heizungsstrom</td><td>${heatingCostsTotal.toFixed(2)}</td><td>${heatingPowerEG.toFixed(2)}</td><td>${heatingPowerOG.toFixed(2)}</td><td>${heatingPower.toFixed(1)} kWh × ${powerPrice.toFixed(2)} €/kWh → nach gelieferter Wärme (${deliveredEG.toFixed(1)} / ${deliveredOG.toFixed(1)} kWh)</td></tr>
-                    <tr class="highlight"><td><strong>Gesamt Strom</strong></td><td>${(totalPower * powerPrice).toFixed(2)}</td><td><strong>${totalPowerEG.toFixed(2)}</strong></td><td><strong>${totalPowerOG.toFixed(2)}</strong></td><td></td></tr>
-                </table>
-
-                <h3>Zusammenfassung: Wer zahlt was?</h3>
-                <table>
-                    <tr class="highlight"><th></th><th>EG zahlt</th><th>OG zahlt</th></tr>
-                    <tr><td><strong>Gasumlage an Vermieter</strong></td><td>${totalEGGas.toFixed(2)} €</td><td>${totalOGGas.toFixed(2)} €</td></tr>
-                    <tr><td><strong>Wasser + Strom (zunächst vom EG gezahlt)</strong></td><td>${(freshEG + sewageEG + totalPowerEG).toFixed(2)} € (bleibt beim EG)</td><td>${reimbursement.toFixed(2)} € <em>(erstattet an EG)</em></td></tr>
-                    <tr class="highlight"><td><strong>Netto-Zahlung OG → EG</strong></td><td colspan="2" style="text-align:center;">${reimbursement.toFixed(2)} €</td></tr>
-                </table>
-
-                <p><strong>Erklärung:</strong><br>
-                - Vermieter legt Gas um: EG ${totalEGGas.toFixed(2)} €, OG ${totalOGGas.toFixed(2)} €.<br>
-                - EG zahlt zunächst Wasser und gesamten Strom.<br>
-                - OG erstattet EG: Frischwasser (${freshOG.toFixed(2)} €) + Abwasser (${sewageOG.toFixed(2)} €) + Stromanteil (${totalPowerOG.toFixed(2)} €) = <strong>${reimbursement.toFixed(2)} €</strong>.</p>
-            `;
-
-            document.getElementById('results').innerHTML = results;
-        });
-    </script>
+    loadValues();
+  </script>
 </body>
 </html>
