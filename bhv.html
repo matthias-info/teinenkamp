@@ -5,46 +5,124 @@
 <title>Wasserkosten Altbau-Rechner</title>
 
 <style>
+
+/* =========================
+   THEME
+========================= */
+
+:root{
+    --bg: #ffffff;
+    --text: #111111;
+    --border: #b5b5b5;
+    --table-bg: #ffffff;
+    --input-bg: #ffffff;
+    --accent: #2b6cb0;
+}
+
+@media (prefers-color-scheme: dark){
+    :root{
+        --bg: #121212;
+        --text: #eaeaea;
+        --border: #3a3a3a;
+        --table-bg: #1e1e1e;
+        --input-bg: #2a2a2a;
+        --accent: #63b3ed;
+    }
+}
+
+/* =========================
+   BASE
+========================= */
+
 body{
     font-family: Arial, sans-serif;
     max-width: 1000px;
     margin: auto;
+    background: var(--bg);
+    color: var(--text);
+    padding: 10px;
 }
+
+h1,h2{
+    color: var(--text);
+}
+
+/* =========================
+   TABLE
+========================= */
+
 table{
     border-collapse: collapse;
     width: 100%;
     margin-bottom: 20px;
+    background: var(--table-bg);
 }
+
 th,td{
-    border: 1px solid #ccc;
+    border: 1px solid var(--border);
     padding: 6px;
 }
+
+/* =========================
+   INPUTS
+========================= */
+
 input{
-    width: 90px;
+    width: 110px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--input-bg);
+    color: var(--text);
+    box-sizing: border-box;
 }
+
+input:focus{
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+/* =========================
+   BUTTON
+========================= */
+
 button{
-    padding: 10px 20px;
+    padding: 10px 18px;
     margin-top: 10px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
 }
+
+button:hover{
+    opacity: 0.9;
+}
+
+/* =========================
+   RESULT
+========================= */
+
 .result{
     margin-top: 20px;
 }
-</style>
 
+</style>
 </head>
 
 <body>
 
-<h1>Wasserkostenverteilung (Altbau – fair Modell)</h1>
+<h1>Wasserkostenverteilung (Altbau – Modell)</h1>
 
 <h2>Kosten</h2>
 <table>
 <tr>
-<td>Kaltwasserkosten (€)</td>
+<td>Kaltwasser (€)</td>
 <td><input id="costCold" type="number"></td>
 </tr>
 <tr>
-<td>Abwasserkosten (€)</td>
+<td>Abwasser (€)</td>
 <td><input id="costWaste" type="number"></td>
 </tr>
 <tr>
@@ -119,14 +197,14 @@ function v(id){
 
 function calc(){
 
-// Tage
 let dEG = v("dEG");
 let dOG = v("dOG");
 let dDG = v("dDG");
 
-// ----------------------
-// GEMESSENE VERBRÄUCHE
-// ----------------------
+/* =========================
+   GEMESSENE VERBRÄUCHE
+========================= */
+
 let EG =
 v("wmEG") + v("wbkEG") + v("wbwEG");
 
@@ -136,60 +214,47 @@ v("wmOG") + v("wbkOG") + v("wbwOG") + v("skOG") + v("swOG");
 let DG =
 v("wmDG") + v("wbkDG") + v("wbwDG") + v("skDG") + v("swDG");
 
-// ----------------------
-// SPÜLE EG SCHÄTZEN
-// ----------------------
+/* =========================
+   SPÜLE EG SCHÄTZEN
+========================= */
 
-// Tagesverbrauch OG / DG
 let ogSink = v("skOG") + v("swOG");
 let dgSink = v("skDG") + v("swDG");
 
-let ogDaily = dOG > 0 ? ogSink / dOG : 0;
-let dgDaily = dDG > 0 ? dgSink / dDG : 0;
+let ogDaily = dOG ? ogSink / dOG : 0;
+let dgDaily = dDG ? dgSink / dDG : 0;
 
-// Mittelwert pro Tag
 let egDaily = (ogDaily + dgDaily) / 2;
+let egSink = egDaily * dEG;
 
-// hochrechnen auf EG Tage
-let egSinkEstimated = egDaily * dEG;
+EG += egSink;
 
-// EG bekommt geschätzte Spüle dazu
-EG += egSinkEstimated;
-
-// ----------------------
-// RESTVERBRAUCH
-// ----------------------
+/* =========================
+   RESTVERBRAUCH
+========================= */
 
 let house = v("houseTotal");
 
-let measuredSum = EG + OG + DG;
+let measured = EG + OG + DG;
 
-let rest = house - measuredSum;
+let rest = house - measured;
 if(rest < 0) rest = 0;
 
-// ----------------------
-// ANWESENHEIT GEWICHT
-// ----------------------
+/* =========================
+   VERTEILUNG REST
+========================= */
 
-let wEG = dEG;
-let wOG = dOG;
-let wDG = dDG;
+let sumDays = dEG + dOG + dDG;
 
-let wSum = wEG + wOG + wDG;
+EG += rest * (dEG / sumDays);
+OG += rest * (dOG / sumDays);
+DG += rest * (dDG / sumDays);
 
-// Restverteilung
-EG += rest * (wEG / wSum);
-OG += rest * (wOG / wSum);
-DG += rest * (wDG / wSum);
+/* =========================
+   KOSTEN
+========================= */
 
-// ----------------------
-// KOSTEN
-// ----------------------
-
-let costCold = v("costCold");
-let costWaste = v("costWaste");
-
-let totalCost = costCold + costWaste;
+let totalCost = v("costCold") + v("costWaste");
 
 let total = EG + OG + DG;
 
@@ -197,42 +262,22 @@ let cEG = totalCost * EG / total;
 let cOG = totalCost * OG / total;
 let cDG = totalCost * DG / total;
 
-// ----------------------
-// OUTPUT
-// ----------------------
+/* =========================
+   OUTPUT
+========================= */
 
 document.getElementById("out").innerHTML = `
 <h2>Ergebnis</h2>
 
 <table>
-<tr>
-<th>Wohnung</th>
-<th>Verbrauch (m³)</th>
-<th>Kosten (€)</th>
-</tr>
-
-<tr>
-<td>EG</td>
-<td>${EG.toFixed(2)}</td>
-<td>${cEG.toFixed(2)}</td>
-</tr>
-
-<tr>
-<td>OG</td>
-<td>${OG.toFixed(2)}</td>
-<td>${cOG.toFixed(2)}</td>
-</tr>
-
-<tr>
-<td>DG</td>
-<td>${DG.toFixed(2)}</td>
-<td>${cDG.toFixed(2)}</td>
-</tr>
+<tr><th>Wohnung</th><th>Verbrauch (m³)</th><th>Kosten (€)</th></tr>
+<tr><td>EG</td><td>${EG.toFixed(2)}</td><td>${cEG.toFixed(2)}</td></tr>
+<tr><td>OG</td><td>${OG.toFixed(2)}</td><td>${cOG.toFixed(2)}</td></tr>
+<tr><td>DG</td><td>${DG.toFixed(2)}</td><td>${cDG.toFixed(2)}</td></tr>
 </table>
 
-<p><b>Hausverbrauch:</b> ${house.toFixed(2)} m³</p>
-<p><b>Rest (Dusche/WC etc.):</b> ${rest.toFixed(2)} m³</p>
-<p><b>EG Spüle geschätzt:</b> ${egSinkEstimated.toFixed(2)} m³</p>
+<p><b>Restverbrauch:</b> ${rest.toFixed(2)} m³</p>
+<p><b>EG Spüle geschätzt:</b> ${egSink.toFixed(2)} m³</p>
 `;
 }
 
