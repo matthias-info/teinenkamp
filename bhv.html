@@ -1,149 +1,241 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <title>Wasserverbrauch Rechner</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 30px;
-      max-width: 900px;
-    }
-    h1, h2 {
-      margin-bottom: 10px;
-    }
-    .section {
-      border: 1px solid #ccc;
-      padding: 15px;
-      margin-bottom: 20px;
-      border-radius: 8px;
-    }
-    label {
-      display: block;
-      margin-top: 8px;
-    }
-    input {
-      width: 100%;
-      padding: 6px;
-      margin-top: 3px;
-    }
-    button {
-      padding: 10px 15px;
-      cursor: pointer;
-      margin-top: 15px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: right;
-    }
-    th {
-      background: #f5f5f5;
-    }
-    td:first-child, th:first-child {
-      text-align: left;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Wasserkosten Altbau-Rechner</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    max-width: 1000px;
+    margin: auto;
+}
+table{
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 20px;
+}
+th,td{
+    border: 1px solid #ccc;
+    padding: 6px;
+}
+input{
+    width: 90px;
+}
+button{
+    padding: 10px 20px;
+    margin-top: 10px;
+}
+.result{
+    margin-top: 20px;
+}
+</style>
+
 </head>
 
 <body>
 
-<h1>Wasserverbrauch Rechner</h1>
+<h1>Wasserkostenverteilung (Altbau – fair Modell)</h1>
 
-<div class="section">
-  <h2>Gesamtverbrauch</h2>
-  <label>Hauptzähler (m³)</label>
-  <input id="total" type="number" value="300">
-</div>
+<h2>Kosten</h2>
+<table>
+<tr>
+<td>Kaltwasserkosten (€)</td>
+<td><input id="costCold" type="number"></td>
+</tr>
+<tr>
+<td>Abwasserkosten (€)</td>
+<td><input id="costWaste" type="number"></td>
+</tr>
+<tr>
+<td>Hauswasser gesamt (m³)</td>
+<td><input id="houseTotal" type="number" step="0.001"></td>
+</tr>
+</table>
 
-<div class="section">
-  <h2>Wohnung EG</h2>
-  <input id="eg" placeholder="Erfasste Summe EG (WM + Waschbecken etc.)">
-</div>
+<h2>Gemessene Verbräuche (m³)</h2>
 
-<div class="section">
-  <h2>Wohnung OG</h2>
-  <input id="og" placeholder="Erfasste Summe OG">
-</div>
+<table>
+<tr><th>Zähler</th><th>EG</th><th>OG</th><th>DG</th></tr>
 
-<div class="section">
-  <h2>Wohnung DG</h2>
-  <input id="dg" placeholder="Erfasste Summe DG">
-</div>
+<tr>
+<td>Waschmaschine</td>
+<td><input id="wmEG"></td>
+<td><input id="wmOG"></td>
+<td><input id="wmDG"></td>
+</tr>
 
-<button onclick="calculate()">Berechnen</button>
+<tr>
+<td>Waschbecken kalt</td>
+<td><input id="wbkEG"></td>
+<td><input id="wbkOG"></td>
+<td><input id="wbkDG"></td>
+</tr>
 
-<div id="output"></div>
+<tr>
+<td>Waschbecken warm</td>
+<td><input id="wbwEG"></td>
+<td><input id="wbwOG"></td>
+<td><input id="wbwDG"></td>
+</tr>
+
+<tr>
+<td>Spüle kalt</td>
+<td>-</td>
+<td><input id="skOG"></td>
+<td><input id="skDG"></td>
+</tr>
+
+<tr>
+<td>Spüle warm</td>
+<td>-</td>
+<td><input id="swOG"></td>
+<td><input id="swDG"></td>
+</tr>
+
+</table>
+
+<h2>Anwesenheitstage</h2>
+<table>
+<tr>
+<th>EG</th><th>OG</th><th>DG</th>
+</tr>
+<tr>
+<td><input id="dEG" value="30"></td>
+<td><input id="dOG" value="10"></td>
+<td><input id="dDG" value="30"></td>
+</tr>
+</table>
+
+<button onclick="calc()">Berechnen</button>
+
+<div class="result" id="out"></div>
 
 <script>
-function calculate() {
-  const total = parseFloat(document.getElementById("total").value);
-  const EG = parseFloat(document.getElementById("eg").value) || 0;
-  const OG = parseFloat(document.getElementById("og").value) || 0;
-  const DG = parseFloat(document.getElementById("dg").value) || 0;
 
-  const erfasst = EG + OG + DG;
-
-  if (erfasst === 0) {
-    document.getElementById("output").innerHTML =
-      "<p>Kein erfasster Verbrauch vorhanden.</p>";
-    return;
-  }
-
-  const rest = total - erfasst;
-
-  const EG_share = EG / erfasst;
-  const OG_share = OG / erfasst;
-  const DG_share = DG / erfasst;
-
-  const EG_total = EG + rest * EG_share;
-  const OG_total = OG + rest * OG_share;
-  const DG_total = DG + rest * DG_share;
-
-  document.getElementById("output").innerHTML = `
-    <div class="section">
-      <h2>Ergebnis</h2>
-
-      <table>
-        <tr>
-          <th>Wohnung</th>
-          <th>Erfasst</th>
-          <th>Rest-Anteil</th>
-          <th>Gesamt</th>
-        </tr>
-        <tr>
-          <td>EG</td>
-          <td>${EG.toFixed(2)}</td>
-          <td>${(rest * EG_share).toFixed(2)}</td>
-          <td>${EG_total.toFixed(2)}</td>
-        </tr>
-        <tr>
-          <td>OG</td>
-          <td>${OG.toFixed(2)}</td>
-          <td>${(rest * OG_share).toFixed(2)}</td>
-          <td>${OG_total.toFixed(2)}</td>
-        </tr>
-        <tr>
-          <td>DG</td>
-          <td>${DG.toFixed(2)}</td>
-          <td>${(rest * DG_share).toFixed(2)}</td>
-          <td>${DG_total.toFixed(2)}</td>
-        </tr>
-        <tr>
-          <th>Summe</th>
-          <th>${erfasst.toFixed(2)}</th>
-          <th>${rest.toFixed(2)}</th>
-          <th>${total.toFixed(2)}</th>
-        </tr>
-      </table>
-    </div>
-  `;
+function v(id){
+    return parseFloat(document.getElementById(id).value)||0;
 }
+
+function calc(){
+
+// Tage
+let dEG = v("dEG");
+let dOG = v("dOG");
+let dDG = v("dDG");
+
+// ----------------------
+// GEMESSENE VERBRÄUCHE
+// ----------------------
+let EG =
+v("wmEG") + v("wbkEG") + v("wbwEG");
+
+let OG =
+v("wmOG") + v("wbkOG") + v("wbwOG") + v("skOG") + v("swOG");
+
+let DG =
+v("wmDG") + v("wbkDG") + v("wbwDG") + v("skDG") + v("swDG");
+
+// ----------------------
+// SPÜLE EG SCHÄTZEN
+// ----------------------
+
+// Tagesverbrauch OG / DG
+let ogSink = v("skOG") + v("swOG");
+let dgSink = v("skDG") + v("swDG");
+
+let ogDaily = dOG > 0 ? ogSink / dOG : 0;
+let dgDaily = dDG > 0 ? dgSink / dDG : 0;
+
+// Mittelwert pro Tag
+let egDaily = (ogDaily + dgDaily) / 2;
+
+// hochrechnen auf EG Tage
+let egSinkEstimated = egDaily * dEG;
+
+// EG bekommt geschätzte Spüle dazu
+EG += egSinkEstimated;
+
+// ----------------------
+// RESTVERBRAUCH
+// ----------------------
+
+let house = v("houseTotal");
+
+let measuredSum = EG + OG + DG;
+
+let rest = house - measuredSum;
+if(rest < 0) rest = 0;
+
+// ----------------------
+// ANWESENHEIT GEWICHT
+// ----------------------
+
+let wEG = dEG;
+let wOG = dOG;
+let wDG = dDG;
+
+let wSum = wEG + wOG + wDG;
+
+// Restverteilung
+EG += rest * (wEG / wSum);
+OG += rest * (wOG / wSum);
+DG += rest * (wDG / wSum);
+
+// ----------------------
+// KOSTEN
+// ----------------------
+
+let costCold = v("costCold");
+let costWaste = v("costWaste");
+
+let totalCost = costCold + costWaste;
+
+let total = EG + OG + DG;
+
+let cEG = totalCost * EG / total;
+let cOG = totalCost * OG / total;
+let cDG = totalCost * DG / total;
+
+// ----------------------
+// OUTPUT
+// ----------------------
+
+document.getElementById("out").innerHTML = `
+<h2>Ergebnis</h2>
+
+<table>
+<tr>
+<th>Wohnung</th>
+<th>Verbrauch (m³)</th>
+<th>Kosten (€)</th>
+</tr>
+
+<tr>
+<td>EG</td>
+<td>${EG.toFixed(2)}</td>
+<td>${cEG.toFixed(2)}</td>
+</tr>
+
+<tr>
+<td>OG</td>
+<td>${OG.toFixed(2)}</td>
+<td>${cOG.toFixed(2)}</td>
+</tr>
+
+<tr>
+<td>DG</td>
+<td>${DG.toFixed(2)}</td>
+<td>${cDG.toFixed(2)}</td>
+</tr>
+</table>
+
+<p><b>Hausverbrauch:</b> ${house.toFixed(2)} m³</p>
+<p><b>Rest (Dusche/WC etc.):</b> ${rest.toFixed(2)} m³</p>
+<p><b>EG Spüle geschätzt:</b> ${egSinkEstimated.toFixed(2)} m³</p>
+`;
+}
+
 </script>
 
 </body>
