@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heizkosten- und Nebenkostenrechner EG/OG</title>
+<style>
+  :root {
+    --bg:#f3f5f2; --panel:#fff; --ink:#1f2a27; --muted:#5c6862; --line:#d3dbd5;
+    --accent:#28685a; --accent-dark:#1f5147; --accent-soft:#e3efe8;
+    --warn-bg:#fff8e8; --warn-line:#edd9ac; --warn-ink:#5c4216;
+    --pay:#9e2f2f; --pay-bg:#fbeeee; --get:#1d6b3a; --get-bg:#e8f5ec;
+    --radius:12px;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.45 system-ui,Arial,sans-serif; color:var(--ink); background:var(--bg); }
+  main { width:min(1180px,calc(100% - 28px)); margin:0 auto; padding:24px 0 56px; }
+  h1 { margin:0 0 6px; font-size:clamp(24px,3.5vw,34px); line-height:1.15; }
+  h2 { margin:0; font-size:18px; }
+  h3 { margin:0; font-size:15px; }
+  .lede { color:var(--muted); max-width:860px; }
+
+  /* Toolbar */
+  .toolbar { position:sticky; top:0; z-index:10; display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+    margin:16px 0; padding:10px 12px; background:rgba(255,255,255,.95); backdrop-filter:blur(6px);
+    border:1px solid var(--line); border-radius:var(--radius); box-shadow:0 4px 14px rgba(0,0,0,.06); }
+  .toolbar .spacer { flex:1; }
+  .status { color:var(--accent-dark); font-size:13px; font-weight:600; min-height:1em; }
+  button { font:inherit; font-weight:600; padding:8px 14px; border-radius:8px; border:1px solid #aebbb3;
+    background:#fff; color:var(--accent-dark); cursor:pointer; }
+  button:hover { background:var(--accent-soft); }
+  button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+  button.primary:hover { background:var(--accent-dark); }
+  button.danger { color:var(--pay); border-color:#d6aaa8; }
+  button.danger:hover { background:var(--pay-bg); }
+
+  /* Inputs */
+  details.card { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); margin-bottom:12px; overflow:hidden; }
+  details.card > summary { cursor:pointer; list-style:none; padding:13px 16px; display:flex; align-items:center; gap:10px;
+    background:var(--accent-soft); font-weight:700; }
+  details.card > summary::-webkit-details-marker { display:none; }
+  details.card > summary::before { content:"▸"; transition:transform .15s; }
+  details.card[open] > summary::before { transform:rotate(90deg); }
+  .badge { margin-left:auto; font-size:12px; font-weight:600; color:var(--muted); }
+  .badge.ok { color:var(--get); } .badge.todo { color:var(--warn-ink); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:14px 16px; padding:16px; }
+  .field label { display:block; font-size:13px; font-weight:600; margin-bottom:4px; }
+  .input-wrap { position:relative; }
+  input { width:100%; padding:9px 44px 9px 10px; border:1px solid #aebbb3; border-radius:8px; font:inherit; background:#fff; color:var(--ink); }
+  input.plain { padding-right:10px; }
+  input:focus { outline:3px solid rgba(40,104,90,.2); border-color:var(--accent); }
+  input.invalid { border-color:var(--pay); background:var(--pay-bg); }
+  .unit { position:absolute; right:10px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:12px; pointer-events:none; }
+  .hint { margin-top:3px; color:var(--muted); font-size:12px; }
+
+  /* Results */
+  .notice { padding:11px 14px; background:var(--warn-bg); border:1px solid var(--warn-line); color:var(--warn-ink); border-radius:8px; font-size:14px; margin-bottom:12px; }
+  .empty { padding:22px; text-align:center; color:var(--muted); background:var(--panel); border:1px dashed #aebbb3; border-radius:var(--radius); }
+  .result-title { display:flex; justify-content:space-between; align-items:baseline; margin:22px 0 10px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:12px; margin-bottom:14px; }
+  .flow { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; border-left:6px solid var(--line); }
+  .flow.pay { border-left-color:var(--pay); } .flow.get { border-left-color:var(--get); } .flow.neutral { border-left-color:var(--accent); }
+  .flow .who { font-size:12px; font-weight:700; text-transform:uppercase; color:var(--muted); }
+  .flow .amount { font-size:26px; font-weight:800; margin:2px 0; }
+  .flow.pay .amount { color:var(--pay); } .flow.get .amount { color:var(--get); }
+  .flow .what { font-size:13px; color:var(--muted); }
+
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { padding:8px 12px; border-bottom:1px solid #e6ebe7; text-align:right; vertical-align:top; }
+  th:first-child, td:first-child { text-align:left; }
+  td.base { text-align:left; color:var(--muted); font-size:13px; }
+  thead th { background:#e8f0ea; font-size:12px; text-transform:uppercase; letter-spacing:.02em; }
+  tbody tr:last-child td { border-bottom:0; }
+  tr.total td { font-weight:700; background:#f2f7f3; border-top:2px solid #cfdcd2; }
+  tr.sub td:first-child { padding-left:28px; color:var(--muted); }
+  tr.sep td { background:#f7f9f7; font-weight:700; font-size:12px; text-transform:uppercase; color:var(--muted); text-align:left; }
+  .zero { color:#aab4ae; }
+  .neg { color:var(--get); }
+
+
+  /* Wizard */
+  .toolbar { display:none; }
+  .stepper { display:flex; gap:6px; margin:18px 0 14px; list-style:none; padding:0; counter-reset:s; }
+  .stepper li { flex:1; text-align:center; font-size:12px; font-weight:600; color:var(--muted); padding-top:30px; position:relative; cursor:default; }
+  .stepper li::before { counter-increment:s; content:counter(s); position:absolute; top:0; left:50%; transform:translateX(-50%);
+    width:24px; height:24px; line-height:24px; border-radius:50%; background:#fff; border:2px solid var(--line); color:var(--muted); font-size:12px; }
+  .stepper li::after { content:""; position:absolute; top:11px; left:calc(50% + 16px); right:calc(-50% + 16px); height:2px; background:var(--line); }
+  .stepper li:last-child::after { display:none; }
+  .stepper li.done { color:var(--accent-dark); cursor:pointer; }
+  .stepper li.done::before { content:"✓"; background:var(--accent); border-color:var(--accent); color:#fff; }
+  .stepper li.done::after { background:var(--accent); }
+  .stepper li.current { color:var(--ink); }
+  .stepper li.current::before { border-color:var(--accent); color:var(--accent-dark); box-shadow:0 0 0 4px rgba(40,104,90,.15); }
+  .step { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:20px; }
+  .step h2 { font-size:22px; margin-bottom:6px; }
+  .step .intro { color:var(--muted); margin-bottom:10px; max-width:780px; }
+  .step .tip { background:var(--accent-soft); border-radius:8px; padding:10px 12px; font-size:13px; margin-bottom:6px; max-width:780px; }
+  .step .grid { padding:12px 0 0; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); }
+  .field .help { margin-top:3px; color:var(--muted); font-size:12px; }
+  .errors { margin-top:14px; padding:10px 14px; background:var(--pay-bg); border:1px solid #d6aaa8; color:var(--pay); border-radius:8px; font-size:14px; }
+  .wizard-nav { display:flex; gap:10px; margin:16px 0; align-items:center; flex-wrap:wrap; }
+  .wizard-nav .spacer { flex:1; }
+  .wizard-nav button { min-width:120px; }
+  @media (max-width:620px) { .stepper li { font-size:0; } .stepper li::before { font-size:12px; } }
+  @media (max-width:620px) { main { width:calc(100% - 16px); } .toolbar button { flex:1 1 auto; } .toolbar .spacer { display:none; } }
+  @media print {
+    .stepper, .wizard-nav, #inputs, .step { display:none !important; }
+    details.card[open] > summary::before { content:""; }
+    body { background:#fff; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Heizkosten- und Nebenkostenrechner EG/OG</h1>
+  <p class="lede">Zwei Wohnungen, zentrale Gasheizung. Der Vermieter zahlt Gas, das EG zahlt Wasser/Abwasser und Allgemeinstrom. Schritt für Schritt: Zuerst Wohnungen, dann Gasrechnung, Zähler, Wasser und Strom – am Ende bekommst du die Aufteilung und die Zahlungsflüsse.</p>
+
+  <ol class="stepper" id="stepper"></ol>
+  <div id="inputs"></div>
+  <div class="wizard-nav" id="nav"></div>
+  <span class="status" id="status" aria-live="polite"></span>
+
+  <div id="results"></div>
+
+  <p class="notice" style="margin-top:24px">Hinweis: Die Berechnung bildet die 30/70-Verteilung nach Heizkostenverordnung praxisnah ab, ersetzt aber keine Rechts- oder Steuerberatung. Vertragsdetails, Eichfristen, Betriebskostenvereinbarung und lokale Gebührenbescheide bitte gesondert prüfen.</p>
+</main>
+
+<script>
+const storageKey = "eg-og-heizkosten-rechner-v1";
+
+// Wizard-Schritte
+const groups = [
+  { title:"Wohnungen", intro:"Zuerst die Grunddaten: Wie groß sind die Wohnungen und welchen Zeitraum rechnest du ab?",
+    tip:"Die Wohnfläche bestimmt den 30-%-Grundkostenanteil der Heizung. Die Abrechnungsdauer wird für die CO₂-Staffel auf 12 Monate hochgerechnet.",
+    fields:[
+    { id:"areaEg", label:"Wohnfläche EG", unit:"m²", value:"78", req:1, help:"Laut Mietvertrag." },
+    { id:"areaOg", label:"Wohnfläche OG", unit:"m²", value:"78", req:1, help:"Laut Mietvertrag." },
+    { id:"period", label:"Abrechnungszeitraum", text:true, ph:"z. B. 2026", help:"Nur zur Beschriftung, optional." },
+    { id:"billingMonths", label:"Abrechnungsdauer", unit:"Monate", value:"12", req:1, help:"Normalerweise 12." },
+  ]},
+  { title:"Gasrechnung", intro:"Jetzt die Zahlen von der Gasrechnung des Vermieters und die bereits geleisteten Vorauszahlungen.",
+    tip:"Die CO₂-Kosten stehen meist separat auf der Rechnung. Sie sind in den Gesamtkosten enthalten und werden vom Rechner herausgerechnet und nach CO₂-Kostenaufteilungsgesetz verteilt.",
+    fields:[
+    { id:"gasCost", label:"Gaskosten gesamt", unit:"€", ph:"1800", req:1, help:"Gesamtbetrag inklusive CO₂-Kosten." },
+    { id:"co2Cost", label:"CO₂-Kosten laut Gasrechnung", unit:"€", ph:"145", help:"Leer lassen, wenn nicht ausgewiesen." },
+    { id:"co2Kg", label:"CO₂-Ausstoß laut Gasrechnung", unit:"kg", ph:"3200", help:"Wird für die Staffel benötigt, wenn CO₂-Kosten > 0." },
+    { id:"gasPrepayEg", label:"Gas-Vorauszahlung EG (Jahr)", unit:"€", ph:"900", help:"Summe der Abschläge des EG an den Vermieter." },
+    { id:"gasPrepayOg", label:"Gas-Vorauszahlung OG (Jahr)", unit:"€", ph:"900", help:"Summe der Abschläge des OG an den Vermieter." },
+  ]},
+  { title:"Wärme & Warmwasser", intro:"Die Ablesewerte der Wärmemengen- und Warmwasserzähler für den Abrechnungszeitraum (Verbrauch, nicht Zählerstand).",
+    tip:"Die gelieferte Wärme teilt die Gaskosten in Heizung und Warmwasser. Innerhalb jedes Blocks gilt: 30 % nach Fläche, 70 % nach Verbrauch.",
+    fields:[
+    { id:"heatEg", label:"Wärmemenge Heizkreis EG", unit:"kWh", ph:"7200", req:1, help:"Verbrauch laut Wärmemengenzähler." },
+    { id:"heatOg", label:"Wärmemenge Heizkreis OG", unit:"kWh", ph:"7600", req:1, help:"Verbrauch laut Wärmemengenzähler." },
+    { id:"wwHeatTotal", label:"Wärmemenge Warmwasser gesamt", unit:"kWh", ph:"2600", req:1, help:"Bestimmt nur die Höhe des Warmwasser-Kostenblocks." },
+    { id:"wwEg", label:"Warmwasser EG", unit:"m³", ph:"32", req:1, help:"Warmwasserzähler EG." },
+    { id:"wwOg", label:"Warmwasser OG", unit:"m³", ph:"28", req:1, help:"Warmwasserzähler OG." },
+  ]},
+  { title:"Wasser über EG", intro:"Das Kaltwasser für die Warmwasserbereitung läuft über den Wasserzähler des EG. Das EG zahlt es zunächst, das OG erstattet seinen Anteil.",
+    tip:"Warmwasser-m³ werden nach Verbrauch geteilt, die Differenz (z. B. Nachfüllen des Heizkreises) 50/50. Abwasser entspricht der gesamten Frischwassermenge.",
+    fields:[
+    { id:"feedWater", label:"Zwischenzähler Kaltwasser", unit:"m³", ph:"63", req:1, help:"Verbrauch laut Zwischenzähler für Heizung/Warmwasser." },
+    { id:"freshPrice", label:"Frischwasserpreis", unit:"€/m³", ph:"2,30", req:1, help:"Laut Wasserrechnung." },
+    { id:"wastePrice", label:"Abwasserpreis", unit:"€/m³", ph:"3,10", req:1, help:"Laut Gebührenbescheid." },
+  ]},
+  { title:"Strom über EG", intro:"Der Allgemeinstrom läuft über den Zähler des EG und enthält auch den Strom der Heizung.",
+    tip:"Der Heizungsstrom wird abgezogen und nach gelieferter Wärme verteilt, der Rest-Allgemeinstrom 50/50.",
+    fields:[
+    { id:"electricityTotal", label:"Allgemeinstrom (Zählerstand gesamt)", unit:"kWh", ph:"520", req:1, help:"Gesamtverbrauch inkl. Heizungsstrom." },
+    { id:"heatingElectricity", label:"Heizungsstrom laut App", unit:"kWh", ph:"180", req:1, help:"0 eintragen, falls unbekannt." },
+    { id:"electricityPrice", label:"Strompreis", unit:"€/kWh", ph:"0,36", req:1, help:"Brutto, laut Stromrechnung." },
+  ]},
+];
+const allFields = groups.flatMap(g => g.fields);
+const inputIds = allFields.map(f => f.id);
+const labelOf = Object.fromEntries(allFields.map(f => [f.id, f.label]));
+const $ = id => document.getElementById(id);
+const RESULT_STEP = groups.length;
+let step = 0;
+
+$("inputs").innerHTML = groups.map((g, gi) => `
+  <section class="step" id="step${gi}" hidden>
+    <h2>Schritt ${gi + 1}: ${g.title}</h2>
+    <p class="intro">${g.intro}</p>
+    <div class="tip">💡 ${g.tip}</div>
+    <div class="grid">${g.fields.map(f => `
+      <div class="field">
+        <label for="${f.id}">${f.label}</label>
+        <div class="input-wrap">
+          <input id="${f.id}" ${f.text ? 'class="plain"' : 'inputmode="decimal"'} value="${f.value ?? ""}" placeholder="${f.ph ? "z. B. " + f.ph : ""}" autocomplete="off">
+          ${f.unit ? `<span class="unit">${f.unit}</span>` : ""}
+        </div>
+        <div class="help">${f.help}</div>
+      </div>`).join("")}
+    </div>
+    <div class="errors" id="err${gi}" hidden></div>
+  </section>`).join("");
+$("stepper").innerHTML = [...groups.map(g => g.title), "Ergebnis"].map((t, i) => `<li data-i="${i}">${t}</li>`).join("");
+
+// ---------- Hilfsfunktionen ----------
+function parseNumber(id) {
+  const raw = $(id).value.trim();
+  if (!raw) return 0;
+  const c = raw.replace(/\s/g, "");
+  const n = Number(c.includes(",") ? c.replace(/\./g, "").replace(",", ".") : c);
+  return Number.isFinite(n) ? n : NaN;
+}
+const collect = () => Object.fromEntries(inputIds.map(id => [id, id === "period" ? $(id).value.trim() : parseNumber(id)]));
+const eur = v => v.toLocaleString("de-DE", { style:"currency", currency:"EUR" });
+const num = (v, d = 2) => v.toLocaleString("de-DE", { minimumFractionDigits:d, maximumFractionDigits:d });
+const pct = v => `${num(v * 100)} %`;
+const share = (p, t) => t > 0 ? p / t : 0;
+const cell = v => `<td class="${Math.abs(v) < 0.005 ? "zero" : v < 0 ? "neg" : ""}">${eur(v)}</td>`;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+
+const stages = [
+  { max:12, tenant:1.00, label:"< 12 kg CO₂/m²/a" },
+  { max:17, tenant:0.90, label:"12 bis < 17 kg CO₂/m²/a" },
+  { max:22, tenant:0.80, label:"17 bis < 22 kg CO₂/m²/a" },
+  { max:27, tenant:0.70, label:"22 bis < 27 kg CO₂/m²/a" },
+  { max:32, tenant:0.60, label:"27 bis < 32 kg CO₂/m²/a" },
+  { max:37, tenant:0.50, label:"32 bis < 37 kg CO₂/m²/a" },
+  { max:42, tenant:0.40, label:"37 bis < 42 kg CO₂/m²/a" },
+  { max:47, tenant:0.30, label:"42 bis < 47 kg CO₂/m²/a" },
+  { max:52, tenant:0.20, label:"47 bis < 52 kg CO₂/m²/a" },
+  { max:Infinity, tenant:0.05, label:"≥ 52 kg CO₂/m²/a" },
+].map(s => ({ ...s, landlord: 1 - s.tenant }));
+
+function validate(v) {
+  const e = [];
+  for (const id of inputIds) if (id !== "period" && Number.isNaN(v[id])) e.push([id, `${labelOf[id]} ist keine gültige Zahl.`]);
+  if (e.length) return e;
+  for (const id of ["areaEg", "areaOg", "gasCost", "billingMonths"]) if (v[id] <= 0) e.push([id, `${labelOf[id]} muss größer als 0 sein.`]);
+  for (const id of ["co2Cost", "co2Kg", "gasPrepayEg", "gasPrepayOg"]) if (v[id] < 0) e.push([id, `${labelOf[id]} darf nicht negativ sein.`]);
+  if (v.co2Cost > v.gasCost) e.push(["co2Cost", "CO₂-Kosten dürfen nicht höher sein als die Gaskosten."]);
+  if (v.co2Cost > 0 && v.co2Kg <= 0) e.push(["co2Kg", "Für die CO₂-Aufteilung bitte den CO₂-Ausstoß eintragen."]);
+  if (v.heatingElectricity > v.electricityTotal) e.push(["heatingElectricity", "Heizungsstrom ist größer als der gesamte Zählerstand."]);
+  if (v.feedWater < v.wwEg + v.wwOg) e.push(["feedWater", "Zwischenzähler ist kleiner als die Summe der Warmwasserzähler."]);
+  if (v.gasCost > 0 && v.heatEg + v.heatOg + v.wwHeatTotal <= 0) e.push(["heatEg", "Mindestens eine Wärmemenge muss eingetragen sein."]);
+  if (v.wwHeatTotal > 0 && v.wwEg + v.wwOg <= 0) e.push(["wwEg", "Warmwasserzähler EG/OG fehlen."]);
+  return e;
+}
+
+// ---------- Berechnung (reine Logik) ----------
+function compute(v) {
+  const r = { v };
+  r.totalArea = v.areaEg + v.areaOg;
+  r.aEg = share(v.areaEg, r.totalArea); r.aOg = 1 - r.aEg;
+
+  r.heatTotal = v.heatEg + v.heatOg;
+  r.delivered = r.heatTotal + v.wwHeatTotal;
+  r.netGas = v.gasCost - v.co2Cost;
+  r.heatPool = r.delivered > 0 ? r.netGas * share(r.heatTotal, r.delivered) : 0;
+  r.wwPool = r.delivered > 0 ? r.netGas * share(v.wwHeatTotal, r.delivered) : 0;
+
+  r.heatBasePool = r.heatPool * 0.3; r.heatUsePool = r.heatPool * 0.7;
+  r.hsEg = share(v.heatEg, r.heatTotal); r.hsOg = share(v.heatOg, r.heatTotal);
+  r.heatBaseEg = r.heatBasePool * r.aEg; r.heatBaseOg = r.heatBasePool * r.aOg;
+  r.heatUseEg = r.heatUsePool * r.hsEg; r.heatUseOg = r.heatUsePool * r.hsOg;
+  r.heatEgCost = r.heatBaseEg + r.heatUseEg; r.heatOgCost = r.heatBaseOg + r.heatUseOg;
+
+  r.wwM3 = v.wwEg + v.wwOg;
+  r.wwBasePool = r.wwPool * 0.3; r.wwUsePool = r.wwPool * 0.7;
+  r.wsEg = share(v.wwEg, r.wwM3); r.wsOg = share(v.wwOg, r.wwM3);
+  r.wwBaseEg = r.wwBasePool * r.aEg; r.wwBaseOg = r.wwBasePool * r.aOg;
+  r.wwUseEg = r.wwUsePool * r.wsEg; r.wwUseOg = r.wwUsePool * r.wsOg;
+  r.wwEgCost = r.wwBaseEg + r.wwUseEg; r.wwOgCost = r.wwBaseOg + r.wwUseOg;
+
+  r.gasEg = r.heatEgCost + r.wwEgCost; r.gasOg = r.heatOgCost + r.wwOgCost;
+
+  r.refill = Math.max(0, v.feedWater - r.wwM3);
+  r.freshTotal = v.feedWater * v.freshPrice; r.wasteTotal = v.feedWater * v.wastePrice;
+  r.refillFresh = r.refill * v.freshPrice; r.refillWaste = r.refill * v.wastePrice;
+  r.waterEg = v.wwEg * (v.freshPrice + v.wastePrice) + (r.refillFresh + r.refillWaste) / 2;
+  r.waterOg = v.wwOg * (v.freshPrice + v.wastePrice) + (r.refillFresh + r.refillWaste) / 2;
+
+  r.restKwh = Math.max(0, v.electricityTotal - v.heatingElectricity);
+  r.elTotalCost = v.electricityTotal * v.electricityPrice;
+  r.elHeatCost = v.heatingElectricity * v.electricityPrice;
+  r.elRestCost = r.restKwh * v.electricityPrice;
+  r.dEg = v.heatEg + v.wwHeatTotal * r.wsEg; r.dOg = v.heatOg + v.wwHeatTotal * r.wsOg;
+  r.dsEg = share(r.dEg, r.dEg + r.dOg); r.dsOg = share(r.dOg, r.dEg + r.dOg);
+  r.elHeatEg = r.elHeatCost * r.dsEg; r.elHeatOg = r.elHeatCost * r.dsOg;
+  r.elEg = r.elRestCost / 2 + r.elHeatEg; r.elOg = r.elRestCost / 2 + r.elHeatOg;
+
+  r.specCo2 = v.co2Kg > 0 ? (v.co2Kg / r.totalArea) * (12 / v.billingMonths) : 0;
+  r.stage = stages.find(s => r.specCo2 < s.max);
+  r.co2Tenant = v.co2Cost * r.stage.tenant; r.co2Landlord = v.co2Cost * r.stage.landlord;
+  r.co2Eg = r.co2Tenant * r.dsEg; r.co2Og = r.co2Tenant * r.dsOg;
+
+  r.gasTotEg = r.gasEg + r.co2Eg; r.gasTotOg = r.gasOg + r.co2Og;
+  r.balEg = r.gasTotEg - v.gasPrepayEg; r.balOg = r.gasTotOg - v.gasPrepayOg;
+  r.totEg = r.gasTotEg + r.waterEg + r.elEg; r.totOg = r.gasTotOg + r.waterOg + r.elOg;
+  r.ogToEg = r.waterOg + r.elOg;
+  return r;
+}
+
+// ---------- Darstellung ----------
+const row = (label, base, eg, og, cls = "") =>
+  `<tr class="${cls}"><td>${label}</td><td class="base">${base}</td>${cell(eg)}${cell(og)}${cell(eg + og)}</tr>`;
+const table = (head, body) => `<div class="table-wrap"><table><thead><tr>${head.map((h, i) => `<th${i === 1 ? ' style="text-align:left"' : ""}>${h}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table></div>`;
+const section = (title, inner, open = false) => `<details class="card" ${open ? "open" : ""}><summary>${title}</summary>${inner}</details>`;
+const flow = (cls, who, amount, what) => `<div class="flow ${cls}"><div class="who">${who}</div><div class="amount">${eur(amount)}</div><div class="what">${what}</div></div>`;
+
+function balanceFlow(name, bal) {
+  return bal >= 0
+    ? flow("pay", `${name} → Vermieter`, bal, "Nachzahlung Gas nach Abzug der Vorauszahlung")
+    : flow("get", `Vermieter → ${name}`, -bal, "Guthaben Gas (Vorauszahlung war höher)");
+}
+
+function render(r) {
+  const v = r.v;
+  const head5 = ["Position", "Zwischenwert", "EG", "OG", "Summe"];
+
+  const overview = `
+    <div class="cards">
+      ${balanceFlow("EG", r.balEg)}
+      ${balanceFlow("OG", r.balOg)}
+      ${flow("pay", "OG → EG", r.ogToEg, `Erstattung Wasser/Abwasser ${eur(r.waterOg)} + Strom ${eur(r.elOg)}`)}
+      ${flow("neutral", "Vermieter trägt selbst", r.co2Landlord, `CO₂-Anteil Vermieter (${pct(r.stage.landlord)} der CO₂-Kosten)`)}
+    </div>
+    ${section("Kostenübersicht je Wohnung", table(head5, [
+      row("Gas ohne CO₂-Kosten", "30/70-Regel", r.gasEg, r.gasOg),
+      row("CO₂-Kosten Mieteranteil", `nach gelieferter Wärme`, r.co2Eg, r.co2Og),
+      row("Gas gesamt", "", r.gasTotEg, r.gasTotOg, "total"),
+      row("− Gas-Vorauszahlung", "bereits an Vermieter gezahlt", -v.gasPrepayEg, -v.gasPrepayOg),
+      row("Gas-Saldo gegenüber Vermieter", "positiv = Nachzahlung, negativ = Guthaben", r.balEg, r.balOg, "total"),
+      row("Wasser/Abwasser", "vom EG vorgelegt", r.waterEg, r.waterOg),
+      row("Strom", "vom EG vorgelegt", r.elEg, r.elOg),
+      row("Kostenanteil gesamt je Wohnung", "Gas + Wasser + Strom", r.totEg, r.totOg, "total"),
+    ].join("")), true)}`;
+
+  const gas = table(head5, [
+    `<tr><td>Gaskosten laut Rechnung</td><td class="base">inkl. CO₂-Kosten</td><td></td><td></td><td>${eur(v.gasCost)}</td></tr>`,
+    `<tr><td>abzüglich CO₂-Kosten</td><td class="base">separat nach CO₂KostAufG</td><td></td><td></td><td>− ${eur(v.co2Cost)}</td></tr>`,
+    row("Bereinigte Gaskosten", `${num(r.delivered)} kWh gelieferte Wärme`, r.gasEg, r.gasOg, "total"),
+    `<tr class="sep"><td colspan="5">Kostenblock Heizung</td></tr>`,
+    row("Heizung gesamt", `${num(r.heatTotal)} kWh = ${pct(share(r.heatTotal, r.delivered))} der Wärme`, r.heatEgCost, r.heatOgCost),
+    row("Grundkosten 30 %", `${eur(r.heatBasePool)} nach Wohnfläche (${pct(r.aEg)} / ${pct(r.aOg)})`, r.heatBaseEg, r.heatBaseOg, "sub"),
+    row("Verbrauchskosten 70 %", `${eur(r.heatUsePool)} nach kWh (${num(v.heatEg)} / ${num(v.heatOg)})`, r.heatUseEg, r.heatUseOg, "sub"),
+    `<tr class="sep"><td colspan="5">Kostenblock Warmwasser</td></tr>`,
+    row("Warmwasser gesamt", `${num(v.wwHeatTotal)} kWh = ${pct(share(v.wwHeatTotal, r.delivered))} der Wärme`, r.wwEgCost, r.wwOgCost),
+    row("Grundkosten 30 %", `${eur(r.wwBasePool)} nach Wohnfläche (${pct(r.aEg)} / ${pct(r.aOg)})`, r.wwBaseEg, r.wwBaseOg, "sub"),
+    row("Verbrauchskosten 70 %", `${eur(r.wwUsePool)} nach m³ (${num(v.wwEg)} / ${num(v.wwOg)})`, r.wwUseEg, r.wwUseOg, "sub"),
+    row("Bereinigter Gasanteil je Wohnung", eur(r.netGas), r.gasEg, r.gasOg, "total"),
+  ].join(""));
+
+  const co2 = table(["Position", "Zwischenwert", "Vermieter", "EG", "OG", "Summe"], [
+    `<tr><td>CO₂-Ausstoß Gebäude</td><td class="base" colspan="5">${num(v.co2Kg)} kg ÷ ${num(r.totalArea)} m² × 12 ÷ ${num(v.billingMonths, 0)} Monate = <b>${num(r.specCo2)} kg CO₂/m²/a</b></td></tr>`,
+    `<tr><td>Stufe CO₂KostAufG</td><td class="base" colspan="5">${esc(r.stage.label)} → Vermieter ${pct(r.stage.landlord)}, Mieter ${pct(r.stage.tenant)}</td></tr>`,
+    `<tr><td>Vermieteranteil</td><td class="base">trägt der Vermieter selbst</td>${cell(r.co2Landlord)}${cell(0)}${cell(0)}${cell(r.co2Landlord)}</tr>`,
+    `<tr><td>Mieteranteil</td><td class="base">${eur(r.co2Tenant)} nach Wärme (${pct(r.dsEg)} / ${pct(r.dsOg)}; ${num(r.dEg)} / ${num(r.dOg)} kWh)</td>${cell(0)}${cell(r.co2Eg)}${cell(r.co2Og)}${cell(r.co2Tenant)}</tr>`,
+    `<tr class="total"><td>CO₂-Kosten gesamt</td><td class="base">aus Gasrechnung herausgerechnet</td>${cell(r.co2Landlord)}${cell(r.co2Eg)}${cell(r.co2Og)}${cell(v.co2Cost)}</tr>`,
+  ].join(""));
+
+  const water = table(head5, [
+    row("Frischwasser Warmwasser", `${num(r.wwM3)} m³ nach Verbrauch`, v.wwEg * v.freshPrice, v.wwOg * v.freshPrice),
+    row("Frischwasser Nachfüllung Heizkreis", `${num(r.refill)} m³ 50/50`, r.refillFresh / 2, r.refillFresh / 2),
+    row("Abwasser Warmwasser", `${num(r.wwM3)} m³ nach Verbrauch`, v.wwEg * v.wastePrice, v.wwOg * v.wastePrice),
+    row("Abwasser Nachfüllung Heizkreis", `${num(r.refill)} m³ 50/50`, r.refillWaste / 2, r.refillWaste / 2),
+    row("Wasser/Abwasser, zunächst vom EG bezahlt", `${num(v.feedWater)} m³, ${eur(r.freshTotal + r.wasteTotal)}`, r.waterEg, r.waterOg, "total"),
+  ].join(""));
+
+  const power = table(head5, [
+    row("Allgemeinstrom (Zählerstand gesamt)", `${num(v.electricityTotal)} kWh × ${eur(v.electricityPrice)}/kWh`, r.elEg, r.elOg),
+    row("davon Heizungsstrom (abgezogen)", `${num(v.heatingElectricity)} kWh, nach Wärme (${pct(r.dsEg)} / ${pct(r.dsOg)})`, r.elHeatEg, r.elHeatOg, "sub"),
+    row("davon Rest-Allgemeinstrom", `${num(r.restKwh)} kWh, 50/50`, r.elRestCost / 2, r.elRestCost / 2, "sub"),
+    row("Strom, zunächst vom EG bezahlt", eur(r.elTotalCost), r.elEg, r.elOg, "total"),
+  ].join(""));
+
+  $("results").innerHTML = `
+    <div class="result-title"><h2>Ergebnis${v.period ? ` ${esc(v.period)}` : ""}</h2></div>
+    ${overview}
+    <h3 style="margin:18px 0 8px">Rechenwege im Detail</h3>
+    ${section("1 · Gas ohne CO₂-Kosten (Wärmemenge und 30/70-Regel)", gas)}
+    ${section("2 · CO₂-Kosten (CO₂-Kostenaufteilungsgesetz)", co2)}
+    ${section("3 · Wasser/Abwasser (Kaltwasser für Warmwasser/Heizung über EG)", water)}
+    ${section("4 · Strom (Allgemeinstrom über EG, Heizungsstrom abgezogen)", power)}`;
+}
+
+function stepErrors(i) {
+  const g = groups[i], v = collect();
+  const ids = g.fields.map(f => f.id);
+  const errs = [];
+  g.fields.forEach(f => {
+    if (f.req && $(f.id).value.trim() === "") errs.push([f.id, `${f.label}: bitte einen Wert eintragen.`]);
+  });
+  if (!errs.length) errs.push(...validate(v).filter(([id]) => ids.includes(id)));
+  return errs;
+}
+
+function showStepErrors(i, errs) {
+  document.querySelectorAll("input.invalid").forEach(x => x.classList.remove("invalid"));
+  const box = $("err" + i);
+  errs.forEach(([id]) => $(id).classList.add("invalid"));
+  box.hidden = !errs.length;
+  box.innerHTML = errs.map(([, m]) => `• ${esc(m)}`).join("<br>");
+  if (errs.length) $(errs[0][0]).focus();
+}
+
+function firstBadStep() {
+  for (let i = 0; i < groups.length; i++) if (stepErrors(i).length) return i;
+  return -1;
+}
+
+function go(n) {
+  step = n;
+  groups.forEach((_, i) => $("step" + i).hidden = i !== n);
+  $("inputs").hidden = n === RESULT_STEP;
+  $("results").hidden = n !== RESULT_STEP;
+  document.querySelectorAll("#stepper li").forEach((li, i) => {
+    li.className = i < n ? "done" : i === n ? "current" : "";
+  });
+  if (n === RESULT_STEP) {
+    const bad = firstBadStep();
+    if (bad >= 0) { go(bad); showStepErrors(bad, stepErrors(bad)); return; }
+    render(compute(collect()));
+  }
+  const last = n === RESULT_STEP;
+  $("nav").innerHTML = `
+    ${n > 0 ? '<button id="back">← Zurück</button>' : ""}
+    <span class="spacer"></span>
+    ${last ? '<button id="save">Werte speichern</button><button id="print">Drucken</button><button class="danger" id="clear">Gespeichertes löschen</button><button id="reset">Neu beginnen</button>'
+           : `<button class="primary" id="next">${n === groups.length - 1 ? "Ergebnis berechnen" : "Weiter →"}</button>`}`;
+  if ($("back")) $("back").onclick = () => go(n - 1);
+  if ($("next")) $("next").onclick = next;
+  if ($("save")) $("save").onclick = saveValues;
+  if ($("print")) $("print").onclick = () => window.print();
+  if ($("clear")) $("clear").onclick = () => { localStorage.removeItem(storageKey); say("Gespeicherte Werte gelöscht."); };
+  if ($("reset")) $("reset").onclick = () => {
+    if (!confirm("Alle Eingaben zurücksetzen und neu beginnen?")) return;
+    allFields.forEach(f => $(f.id).value = f.value ?? "");
+    go(0);
+  };
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+
+function next() {
+  const errs = stepErrors(step);
+  showStepErrors(step, errs);
+  if (errs.length) return;
+  saveValues(true);
+  go(step + 1);
+}
+
+// ---------- Speichern ----------
+const say = msg => { $("status").textContent = msg; clearTimeout(say.t); say.t = setTimeout(() => $("status").textContent = "", 4000); };
+
+function saveValues(silent) {
+  localStorage.setItem(storageKey, JSON.stringify(Object.fromEntries(inputIds.map(id => [id, $(id).value]))));
+  if (silent !== true) say("Lokal im Browser gespeichert.");
+}
+function loadValues() {
+  const saved = localStorage.getItem(storageKey);
+  if (!saved) return;
+  try {
+    const d = JSON.parse(saved);
+    inputIds.forEach(id => { if (id in d) $(id).value = d[id]; });
+    say("Gespeicherte Werte geladen.");
+  } catch { localStorage.removeItem(storageKey); }
+}
+
+document.querySelectorAll("#stepper li").forEach(li => li.addEventListener("click", () => {
+  const i = +li.dataset.i;
+  if (i < step) go(i);
+}));
+inputIds.forEach(id => $(id).addEventListener("keydown", e => { if (e.key === "Enter" && step < RESULT_STEP) next(); }));
+
+loadValues();
+go(0);
+</script>
+</body>
+</html>
